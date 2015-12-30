@@ -1,5 +1,5 @@
 ﻿MARC21 bibliographic (RDA) to Finmarc (Unicode Supported)
-RDA-versio 23.12.2015 (KK/TV)
+RDA-versio 30.12.2015 (KK/TV)
 
 #define macro SetIndFrom245np | If (Exists(@245(1)$n) Or Exists(@245(1)$p)) Then '1' Else ' '
 
@@ -229,8 +229,8 @@ X07/8/     | 008(1)/32/     | S
 008/29/    | 008/29/        | Table ('virally.tbl')
 #endif
 
-015I1 | 015I1	    | S
-015I2 | 015I2	    | PartOrWhole
+015I1 | 015I1	      | S
+015I2 | 015I2	      | PartOrWhole
 015$a | 015$a       | RegReplace('[\\(\\s]*(sid\\.|nid\\.|rengaskirja)\\)?', ''); If (S != '') Then S
 015$a | <A21$c      | If Not (Exists(@020$q)) And If (RegFind('(sid\\.|nid\\.|rengaskirja|hbk\\.|pbk\\.|[Kk]oko|[Oo]sa)') >= 0) Then RegMatch(1)
 015$q | <A21$c      | If Not (Exists(@020$q)) Then S; RegReplace('\\s*\\((.*?)\\)', '$c\\1'); RegReplace('\\s*\\((.*?)\\)', ', \\1'); Delete (':', At Ending)
@@ -331,7 +331,12 @@ A21   | 021         | S; MoveAfter('c', $a, 'c')
 041$j | <A41$j        | Table ('kielikoodit.tbl')
 A41I1 | 041(new)I1    | S
 A41I2 | 041(newest)I2 | S
-A41   | 041(newest)   | S; ReplaceOcc('$a' By '','>1'); ReplaceOcc('$b' By '','>1'); ReplaceOcc('$h' By '','>1'); Replace ('$d' By '$a'); Replace('$h' By '$c'); Replace ('hunhun' By 'hun')
+A41   | 041(newest)   | S; ReplaceOcc('$a' By '','>1'); \
+                           ReplaceOcc('$b' By '','>1'); \
+                           ReplaceOcc('$h' By '','>1'); \
+                           Replace ('$d' By '$a'); \
+                           Replace('$h' By '$c'); \
+                           Replace ('hunhun' By 'hun')
 
 008/36-38/ | 041$a  | If ((Not Exists (@041)) And S != '   ') Then S
 
@@ -1318,39 +1323,6 @@ H87   | 787(newest)   | S
 787$a | 560$d        | S; Delete('.', At Ending)
 787$d | 560$j        | S; RegReplace(',?\\s*(\\d+)', '$k\\1')
 #endif
-
-//Jätetty konvertoimatta - sarjakenttien käyttö poikkeaa FINMARCista
-//810I1 | 810I1       | If (I1=0 Or I1=2) Then '2' Else S
-//810I2 | 810I2       | ' '
-//810$a | 810$a       | S; Delete ('.', At Ending)
-//810$b | 810$c       | S; Delete ('.', At Ending)
-//810$t | 810$n       | S; Delete ('.', At Ending); Delete (';', At Ending); Delete (',', At Ending); Replace (' : ' By '$b') ; Replace (' = ' By '$r')
-//810$n | 810$n       | S; Delete ('.', At Ending); Delete (',', At Ending)
-//810$p | 810$g       | S; Delete ('.', At Ending); Delete (';', At Ending)
-//810$v | 810$v       | S; Delete ('.', At Ending)
-//810$x | 810$w       | S; Delete ('.', At Ending)
-
-//811I1 | 810I1       | If (I1=0 Or I1=2) Then '2' Else S
-//811I2 | 810I2       | ' '
-//811$a | 810$a       | S; Delete ('.', At Ending)
-//811$c | 810$a       | + ' ' + S; Delete (';', At Ending, Strict); Delete ('.', At Ending, Strict); Delete (',', At Ending, Strict)
-//811$d | 810$a       | + ' ' + S; Delete (';', At Ending, Strict); Delete ('.', At Ending, Strict); Delete (',', At Ending, Strict)
-//811$e | 810$a       | + ' ' + S; Delete (';', At Ending, Strict); Delete ('.', At Ending, Strict); Delete (',', At Ending, Strict)
-//811$t | 810$a       | + '. ' + S; Delete (';', At Ending, Strict); Delete ('.', At Ending, Strict); Delete (',', At Ending, Strict)
-//811$n | 810$a       | + ' ' + S; Delete (';', At Ending, Strict); Delete ('.', At Ending, Strict); Delete (',', At Ending, Strict)
-//811$p | 810$a       | + ' ' + S; Delete (';', At Ending, Strict); Delete ('.', At Ending, Strict); Delete (',', At Ending, Strict)
-//811$v | 810$v       | S; Delete (';', At Ending); Delete ('.', At Ending)
-//811$x | 810$w       | S; Delete ('.', At Ending); Delete (';', At Ending)
-
-//830I1 | 840(new)I1       | ' '
-//830I2 | 840(newest)I2    | If (I1='0') Then ' ' Else S
-//830$a | 840(newest)$a    | S; Replace (' / ' By '$n'); Delete ('.', At Ending); Delete (',', At Ending); Delete (';', At Ending)
-//830$g | 840(newest)$a    | + ' ' + S; Delete ('.', At Ending, Strict); Delete (',', At Ending, Strict); Delete (';', At Ending, Strict)
-//830$n | 840(newest)$g    | S; Delete ('.', At Ending, Strict); Delete (',', At Ending, Strict); Delete (';', At Ending, Strict)
-//830$p | 840(newest)$a    | + ', ' + S; Delete ('.', At Ending, Strict); Delete (',', At Ending, Strict); Delete (';', At Ending, Strict)
-//830$t | 840(newest)$a    | + '. ' + S; Delete (';', At Ending, Strict); Delete ('.', At Ending, Strict); Delete (',', At Ending, Strict)
-//830$v | 840(newest)$v    | S; Delete (';', At Ending); Delete ('.', At Ending)
-//830$x | 840(newest)$w    | S; Delete ('.', At Ending); Delete (';', At Ending)
 
 #if (@810$a + @810$x != @490(1)$a + @490(1)$x And @810$a + @810$x != @490(2)$a + @490(2)$x And @810$a + @810$x != @490(3)$a + @490(3)$x)
 810I1 | 540I1       | '1'
