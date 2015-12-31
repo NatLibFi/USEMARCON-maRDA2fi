@@ -1,5 +1,5 @@
 ﻿MARC21 bibliographic (RDA) to Finmarc (Unicode Supported)
-RDA-versio 30.12.2015 (KK/TV)
+RDA-versio 31.12.2015 (KK/TV)
 
 #define macro SetIndFrom245np | If (Exists(@245(1)$n) Or Exists(@245(1)$p)) Then '1' Else ' '
 
@@ -238,7 +238,7 @@ X07/8/     | 008(1)/32/     | S
 020I1 | <A21I1      | ' '
 020I2 | <A21I2      | PartOrWhole
 020$a | <A21$a      | S; RegReplace('\\s*\\((.*?)\\)', '$c\\1'); RegReplace('\\s*\\((.*?)\\)', ', \\1'); Delete (':', At Ending)
-020$q | <A21$c      | If (RegFind('(sid\\.|nid\\.|rengaskirja|hbk\\.|pbk\\.|[Kk]oko|[Oo]sa)') >= 0) Then S; Delete ('(', At Beginning); Delete (')', At Ending)
+020$q | <A21$c      | Table ('Sidosasut.tbl'); Delete ('(', At Beginning); Delete (')', At Ending)
 020$c | <A21$d      | S; Replace (', ' By '$e')
 020$z | <A21$z      | S; RegReplace('\\s*\\((.*?)\\)', '$c\\1'); RegReplace('\\s*\\((.*?)\\)', ', \\1'); Delete (':', At Ending)
 
@@ -640,7 +640,7 @@ C46   | 745(newest)   | S; Replace('$b' By ' : ')
 
 250I1 | 250I1       | ' '
 250I2 | 250I2       | SetIndFrom245np
-250$a | 250$a       | S; Delete ('/', At Ending); If (RegFind('[ed|uppl]\\.\$') < 0 And RegFind('\\s.\\.\$') < 0) Delete ('.', At Ending)
+250$a | 250$a       | S; Delete ('/', At Ending); If (RegFind('[ed|uppl]\\.\$') < 0 And RegFind('\\s.\\.\$') < 0) Delete ('.', At Ending); Replace ('painos' By 'p.')
 250$b | 250$c       | S; Delete ('.', At Ending)
 
 254I1 | 254I1       | ' '
@@ -683,17 +683,17 @@ C46   | 745(newest)   | S; Replace('$b' By ' : ')
 #endif
 
 // Kenttää voidaan toistaa, 2. indikaattorin arvo ratkaisee tuleeko esim. vuosiluku kenttään 
-264I1 | 260I1       | ' '
-264I2 | 260I2       | ' '
-264$a | 260$a       | S; Delete (':', At Ending); Delete (',', At Ending); Delete ('.', At Ending); Delete (';', At Ending)
-264$b | 260$b       | S; Delete (',', At Ending); Delete (':', At Ending); Delete ('.', At Ending); Delete (';', At Ending)
+264I1 | 260(new)I1       | ' '
+264I2 | 260(newest)I2       | ' '
+264$a | 260(newest)$a  | S; Delete (':', At Ending); Delete (',', At Ending); Delete ('.', At Ending); Delete (';', At Ending)
+264$b | 260(newest)$b       | S; Delete (',', At Ending); Delete (':', At Ending); Delete ('.', At Ending); Delete (';', At Ending)
 
 #if (264I2 != '3')
-264$c | 260$c       | S; Delete ('.', At Ending); Delete (';', At Ending); Delete ('['); Delete (']')
+264$c | 260(newest)$c       | S; Delete ('.', At Ending); Delete (';', At Ending); Delete ('['); Delete (']')
 #endif
 
 #if (264I2 = '3')
-264$c | 260$g       | S; Delete ('.', At Ending); Delete (';', At Ending); Delete ('['); Delete (']')
+264$a | 260(newest)$e       | S; Delete ('.', At Ending); Delete (';', At Ending); Delete ('['); Delete (']')
 #endif
 
 300I1 | <C00I1      | ' '
@@ -702,11 +702,22 @@ C46   | 745(newest)   | S; Replace('$b' By ' : ')
 300$a | <C00$a      | S; Replace ('p.' By 's.');
                       Replace ('S ' By 's. ');
                       Replace ('S.' By 's.');
+                      Replace ('volumes' By 'vol.');
                       Delete (':', At Ending);
                       Delete (';', At Ending);
                       Delete ('+', At Ending);
+                      Replace ('sivua' By 's.');
                       RegReplace('(.*)\\((.+)\\)', '\\2$z\\1')
-300$b | <C00$b      | S; Replace ('ill.' By 'kuv.'); Replace ('illus.' By 'kuv.'); Replace (' (some col.)' By ''); Replace (' (part col.)' By ''); Replace (' (chiefly col.)' By ''); Replace ('col. ' By ''); Replace (' (vissa i f\87rg)' By ''); Delete (';', At Ending); Delete ('+', At Ending)
+300$b | <C00$b      | S; Replace ('ill.' By 'kuv.'); 
+                      Replace ('illus.' By 'kuv.'); 
+                      Replace ('kuvitettu' By 'kuv.'); 
+                      Replace (' (some col.)' By ''); 
+                      Replace (' (part col.)' By ''); 
+                      Replace (' (chiefly col.)' By ''); 
+                      Replace ('col. ' By ''); 
+                      Replace (' (vissa i f\87rg)' By ''); 
+                      Delete (';', At Ending);
+                      Delete ('+', At Ending)
 300$c | <C00$c      | S; Replace ('.' By ' '); Delete ('+', At Ending)
 300$e | <C00$d      | S; Replace ('+ ' By ' ', At Beginning); Delete ('.', At Ending)
 
@@ -970,7 +981,7 @@ C05   | 505(1)      | If (D != '') Then D + S Else S; ReplaceOcc('$a' By ' ; ', 
 
 588I1 | 530I1       | ' '
 588I2 | 530I2 	    | ' '
-588$a | 530$a	    | S; Delete ('.', At Ending)
+588$a | 530$a	      | S; Delete ('.', At Ending)
 
 600I1 | 600I1       | NameCheck
 600I2 | 600I2       | ' '
@@ -1277,7 +1288,7 @@ H76I2 | 776(newest)I2 | S
 H76   | 776(newest)   | S
 #endif
 
-776$z | 530(new)$a  | (Len('\C3\A4') = 1) Then 'My\c3\b6s' Else 'My\c8os'; // Unicode check hack
+776$z | 530(new)$a  | If (Len('\C3\A4') = 1) Then 'My\c3\b6s' Else 'My\c8os'; \ // Unicode check hack
                       S + ' painettuna (ISBN ' + S + ')'
 
 // 780 -> 780
