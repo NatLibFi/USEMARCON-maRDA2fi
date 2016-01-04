@@ -16,6 +16,13 @@ RDA-versio 4.1.2016 (KK/TV)
 
 // Whether field 563 is removed from the resulting records (0=no, 1=yes)
 #define macro remove_563    | 1
+
+#define macro LYHENTEET | Replace('painos' By 'p.'); \
+                          Replace('karttoja' By 'kartt.'); \
+                          Replace('nuotteja' By 'nuott.'); \
+                          Replace('kuvitettu' By 'kuv.'); \
+                          Replace('sivua' By 's.'); \
+                          Replace('painos' By 'p.')
           
 #define macro PartOrWhole   | If (Exists(@245(1)$n) Or Exists(@245(1)$p)) \
                                 And If ((RegFind($q, '[Kk]oko(.*)') < 0) \
@@ -646,7 +653,7 @@ C46   | 745(newest)   | S; Replace('$b' By ' : ')
 
 250I1 | 250I1       | ' '
 250I2 | 250I2       | SetIndFrom245np
-250$a | 250$a       | S; Delete ('/', At Ending); If (RegFind('[ed|uppl]\\.\$') < 0 And RegFind('\\s.\\.\$') < 0) Delete ('.', At Ending); Replace ('painos' By 'p.')
+250$a | 250$a       | S; Delete ('/', At Ending); If (RegFind('[ed|uppl]\\.\$') < 0 And RegFind('\\s.\\.\$') < 0) Delete ('.', At Ending); LYHENTEET
 250$b | 250$c       | S; Delete ('.', At Ending)
 
 254I1 | 254I1       | ' '
@@ -715,8 +722,8 @@ C46   | 745(newest)   | S; Replace('$b' By ' : ')
                       Delete (':', At Ending);
                       Delete (';', At Ending);
                       Delete ('+', At Ending);
-                      Replace ('sivua' By 's.');
-                      RegReplace('(.*)\\((.+)\\)', '\\2$z\\1')
+                      RegReplace('(.*)\\((.+)\\)', '\\2$z\\1');
+                      LYHENTEET
 300$b | <C00$b      | S; Replace ('ill.' By 'kuv.'); 
                       Replace ('illus.' By 'kuv.'); 
                       Replace ('kuvitettu' By 'kuv.'); 
@@ -726,7 +733,8 @@ C46   | 745(newest)   | S; Replace('$b' By ' : ')
                       Replace ('col. ' By ''); 
                       Replace (' (vissa i f\87rg)' By ''); 
                       Delete (';', At Ending);
-                      Delete ('+', At Ending)
+                      Delete ('+', At Ending);
+                      LYHENTEET
 300$c | <C00$c      | S; Replace ('.' By ' '); Delete ('+', At Ending)
 300$e | <C00$d      | S; Replace ('+ ' By ' ', At Beginning); Delete ('.', At Ending)
 
