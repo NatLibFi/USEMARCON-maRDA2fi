@@ -235,10 +235,10 @@ X07/8/     | 008(1)/32/     | S
 015I2 | 015I2	      | PartOrWhole
 015$a | 015$a       | RegReplace('[\\(\\s]*(sid\\.|nid\\.|rengaskirja)\\)?', ''); If (S != '') Then S
 015$a | <A21$c      | If Not (Exists(@020$q)) And If (RegFind('(sid\\.|nid\\.|rengaskirja|hbk\\.|pbk\\.|[Kk]oko|[Oo]sa)') >= 0) Then RegMatch(1)
-015$q | <A21$c      | Delete ('(', At Beginning); Delete (')', At Ending); 
-                      If Not (Exists(@020$q)) Then Table ('Sidosasut.tbl'); 
-                      RegReplace('\\s*\\((.*?)\\)', '$c\\1'); 
-                      RegReplace('\\s*\\((.*?)\\)', ', \\1'); 
+015$q | <A21$c      | If Not (Exists(@020$q)) Then Table ('Sidosasut.tbl');
+                      Delete ('(', At Beginning); Delete (')', At Ending); 
+                      RegReplace('\\s*\\((.*?)\\)', '$c\\1');
+                      RegReplace('\\s*\\((.*?)\\)', ', \\1');
                       Delete (':', At Ending)
 
 020I1 | <A21I1      | ' '
@@ -699,8 +699,8 @@ C46   | 745(newest)   | S; Replace('$b' By ' : ')
 #endif
 
 #if (@264(n)I2 = '3')
-264(n)$a | 260(no)$e    | '(' + S
-264(n)$b | 260(no)$f    | S + ')'
+264(n)$a | 260(no)$e    | S
+264(n)$b | 260(no)$f    | S
 #endif
 
 //264$a | 260(newest)$e       | S; Delete ('.', At Ending); Delete (';', At Ending); Delete ('['); Delete (']')
