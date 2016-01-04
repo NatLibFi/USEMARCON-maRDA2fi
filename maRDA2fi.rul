@@ -1,11 +1,13 @@
 ﻿MARC21 bibliographic (RDA) to Finmarc (Unicode Supported)
-RDA-versio 31.12.2015 (KK/TV)
+RDA-versio 4.1.2016 (KK/TV)
 
 #define macro SetIndFrom245np | If (Exists(@245(1)$n) Or Exists(@245(1)$p)) Then '1' Else ' '
 
 #define macro PadZero       | RegReplace('^.*?(\\d+).*?\$', '\\1'); While (Len(S) < 4) { '0' + S; }
 
-#define macro NameCheck     | If (RegFind($a, '[^,]\\s[^,]+\\, ') >= 0) Or If ((Len($a) > 10) And (RegFind($a,  '[^,]-[^,]+\\, ') >= 0)) Then '2' Else S
+#define macro NameCheck     | If (RegFind($a, '[^,]\\s[^,]+\\, ') >= 0) \
+                              Or If ((Len($a) > 10) And (RegFind($a,  '[^,]-[^,]+\\, ') >= 0)) \
+                              Then '2' Else S
 
 #define macro YearOfDeath   | If (RegFind('\\d[-]\\d') >= 0) Then Val(Between(6,9)); If S < 1900 Then ($d)
 
@@ -106,7 +108,7 @@ RDA-versio 31.12.2015 (KK/TV)
 #endif
 
 006/6/     | 006/6/         | Table ('kohdery.tbl')
-006/17/    | 006/7/         | If (@006/1/='g' Or @006/1/='k' Or @006/1/='r')Then Table ('visilmy.tbl')
+006/17/    | 006/7/         | If (@006/1/='g' Or @006/1/='k' Or @006/1/='r') Then Table ('visilmy.tbl')
 
 007        | <X07           | S // Viivästetään, että saadaan 008 käsiteltyä
 
@@ -233,7 +235,11 @@ X07/8/     | 008(1)/32/     | S
 015I2 | 015I2	      | PartOrWhole
 015$a | 015$a       | RegReplace('[\\(\\s]*(sid\\.|nid\\.|rengaskirja)\\)?', ''); If (S != '') Then S
 015$a | <A21$c      | If Not (Exists(@020$q)) And If (RegFind('(sid\\.|nid\\.|rengaskirja|hbk\\.|pbk\\.|[Kk]oko|[Oo]sa)') >= 0) Then RegMatch(1)
-015$q | <A21$c      | If Not (Exists(@020$q)) Then S; RegReplace('\\s*\\((.*?)\\)', '$c\\1'); RegReplace('\\s*\\((.*?)\\)', ', \\1'); Delete (':', At Ending)
+015$q | <A21$c      | Delete ('(', At Beginning); Delete (')', At Ending); 
+                      If Not (Exists(@020$q)) Then Table ('Sidosasut.tbl'); 
+                      RegReplace('\\s*\\((.*?)\\)', '$c\\1'); 
+                      RegReplace('\\s*\\((.*?)\\)', ', \\1'); 
+                      Delete (':', At Ending)
 
 020I1 | <A21I1      | ' '
 020I2 | <A21I2      | PartOrWhole
@@ -682,19 +688,22 @@ C46   | 745(newest)   | S; Replace('$b' By ' : ')
 260$g | 260(newest)$g    | S; Delete ('(', At Beginning); Delete (')', At Ending); Delete ('.', At Ending)
 #endif
 
-// Kenttää voidaan toistaa, 2. indikaattorin arvo ratkaisee tuleeko esim. vuosiluku kenttään 
-264I1 | 260(new)I1       | ' '
-264I2 | 260(newest)I2       | ' '
-264$a | 260(newest)$a  | S; Delete (':', At Ending); Delete (',', At Ending); Delete ('.', At Ending); Delete (';', At Ending)
-264$b | 260(newest)$b       | S; Delete (',', At Ending); Delete (':', At Ending); Delete ('.', At Ending); Delete (';', At Ending)
+// Kenttää voidaan toistaa, 2. indikaattorin arvo ratkaisee tuleeko esim. vuosiluku kenttään
 
-#if (264I2 != '3')
-264$c | 260(newest)$c       | S; Delete ('.', At Ending); Delete (';', At Ending); Delete ('['); Delete (']')
+#if Not (@264(n)I2 = '3')
+264I1 | 260I1    | ' '
+264I2 | 260I2    | ' '
+264$a | 260$a    | S; Delete (':', At Ending); Delete (',', At Ending); Delete ('.', At Ending); Delete (';', At Ending)
+264$b | 260$b    | S; Delete (',', At Ending); Delete (':', At Ending); Delete ('.', At Ending); Delete (';', At Ending)
+264$c | 260$c    | S; Delete ('.', At Ending); Delete (';', At Ending); Delete ('['); Delete (']')
 #endif
 
-#if (264I2 = '3')
-264$a | 260(newest)$e       | S; Delete ('.', At Ending); Delete (';', At Ending); Delete ('['); Delete (']')
+#if (@264(n)I2 = '3')
+264(n)$a | 260(no)$e    | '(' + S
+264(n)$b | 260(no)$f    | S + ')'
 #endif
+
+//264$a | 260(newest)$e       | S; Delete ('.', At Ending); Delete (';', At Ending); Delete ('['); Delete (']')
 
 300I1 | <C00I1      | ' '
 300I2 | <C00I2      | SetIndFrom245np
