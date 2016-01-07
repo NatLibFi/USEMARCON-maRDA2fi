@@ -1,5 +1,5 @@
 ﻿MARC21 bibliographic (RDA) to Finmarc (Unicode Supported)
-RDA-versio 4.1.2016 (KK/TV)
+RDA-versio 7.1.2016 (KK/TV)
 
 #define macro SetIndFrom245np | If (Exists(@245(1)$n) Or Exists(@245(1)$p)) Then '1' Else ' '
 
@@ -702,7 +702,6 @@ C46   | 745(newest)   | S; Replace('$b' By ' : ')
 264I2 | 260I2    | ' '
 264$a | 260$a    | S; Delete (':', At Ending); Delete (',', At Ending); Delete ('.', At Ending); Delete (';', At Ending)
 264$b | 260$b    | S; Delete (',', At Ending); Delete (':', At Ending); Delete ('.', At Ending); Delete (';', At Ending)
-264$c | 260$c    | S; Delete ('.', At Ending); Delete (';', At Ending); Delete ('['); Delete (']')
 #endif
 
 #if (@264(n)I2 = '3')
@@ -710,7 +709,16 @@ C46   | 745(newest)   | S; Replace('$b' By ' : ')
 264(n)$b | 260(no)$f    | S
 #endif
 
-//264$a | 260(newest)$e       | S; Delete ('.', At Ending); Delete (';', At Ending); Delete ('['); Delete (']')
+// Jos 264$c-kentän toistumiin on kirjattu sama vuosi julkaisu- ja tekijänoikeusvuodeksi --> 264$c '© vuosi'
+
+#if (Exists(@264(2)$c))
+264(1)$c | <X01$c  | If (RegFind(S, '\\d+') >=0 ) Then RegMatch(0)
+X01$c    | 260$c   | If (RegFind(@264(2)$c, '\\d+') >= 0) And (RegMatch(0) = S) Then '© ' + S Else S
+#endif
+
+#if (Not Exists(@264(2)$c))
+264$c | 260$c    | S
+#endif
 
 300I1 | <C00I1      | ' '
 300I2 | <C00I2      | SetIndFrom245np
