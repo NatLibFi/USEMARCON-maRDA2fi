@@ -1,5 +1,5 @@
 ﻿MARC21 bibliographic (RDA) to Finmarc (Unicode Supported)
-RDA-versio 7.1.2016 (KK/TV)
+RDA-versio 15.4.2016 (KK/TV)
 
 #define macro SetIndFrom245np | If (Exists(@245(1)$n) Or Exists(@245(1)$p)) Then '1' Else ' '
 
@@ -27,17 +27,24 @@ RDA-versio 7.1.2016 (KK/TV)
 #define macro PartOrWhole   | If (Exists(@245(1)$n) Or Exists(@245(1)$p)) \
                                 And If ((RegFind($q, '[Kk]oko(.*)') < 0) \
                                 And (RegFind($c, '[Kk]oko(.*)') < 0)) Then '1' \
-                              Else If ((@RegFind(020$c, '[Kk]oko(.*)') >= 0) \
+                              Else If ( (@RegFind(020$c, '[Kk]oko(.*)') >= 0) \
                                 Or (@RegFind(020$q, '[Kk]oko(.*)') >= 0) \
                                 Or (@RegFind(020(2)$c, '[Kk]oko(.*)') >= 0) \
                                 Or (@RegFind(020(2)$q, '[Kk]oko(.*)') >= 0) \
                                 Or (@RegFind(020(3)$c, '[Kk]oko(.*)') >= 0) \
                                 Or (@RegFind(020(3)$q, '[Kk]oko(.*)') >= 0) \
                                 Or (@RegFind(020(4)$c, '[Kk]oko(.*)') >= 0) \
-                                Or (@RegFind(020(4)$q, '[Kk]oko(.*)') >= 0)) \
+                                Or (@RegFind(020(4)$q, '[Kk]oko(.*)') >= 0) ) \
                               And If ((RegFind($q, '[Kk]oko(.*)') < 0) \
                               And (RegFind($c, '[Kk]oko(.*)') < 0)) \
                               Then '1' Else S
+
+#define macro KUSTANNUSOY   | Replace('Oy' By ''); \
+                              Replace('Ab' By ''); \
+                              Replace('AB' By ''); \
+                              Replace('Ltd' By ''); \
+                              Replace('Kustannusosakeyhtiö' By ''); \
+                              Replace('Kustannus' By '')
 
 000/1-5/   | 000/1-5/       | S
 000/6/     | 000/6/         | 'n'
@@ -54,7 +61,18 @@ RDA-versio 7.1.2016 (KK/TV)
 
 008/1-6/   | 008/1-6/       | S
 008/7/     | 008/7/         | Table ('aikaindy.tbl')
-008/8-15/  | 008/8-15/      | S
+008/8-11/  | 008/8-11/      | S
+
+// Jos RDA/ISBD-tietueessa merkkipaikassa 008/06 on 't', jätetään jälkimmäinen vuosiluku (copyright) tyhjäksi.
+
+#if (@008/7/ = 't')
+008/12-15/  | 008/12-15/    | '    '
+#endif
+
+#if (Not @008/7/ = 't')
+008/12-15/  | 008/12-15/    | S
+#endif
+
 008/16-18/ | 008/16-18/     | Table ('maakoodity.tbl')
 008/36-38/ | 008/36-38/     | Table ('kielikoodit.tbl')
 008/39-40/ | 008/39-40/     | '  '
@@ -671,54 +689,78 @@ C46   | 745(newest)   | S; Replace('$b' By ' : ')
 256I2 | 258I2       | SetIndFrom245np
 256$a | 258$a       | S; Delete ('.', At Ending)
 
-#if (Not (Exists (@245(1)$n) Or Exists (@245(1)$p)))
-260I1 | 260I1            | ' '
-260I2 | 260I2            | ' '
-260$a | 260$a            | S; Delete (':', At Ending); Delete (',', At Ending); Delete ('.', At Ending); Delete (';', At Ending)
-260$b | 260$b            | S; Delete (',', At Ending); Delete (':', At Ending); Delete ('.', At Ending); Delete (';', At Ending)
-260$c | 260$c            | S; Replace ('c1' By 'cop. 1'); Replace ('c2' By 'cop. 2'); Delete ('.', At Ending); Delete (';', At Ending)
-260$e | 260$e            | S; Delete ('(', At Beginning); Delete (')', At Ending); Delete (':', At Ending); Delete ('.', At Ending)
-260$f | 260$f            | S; Delete ('(', At Beginning); Delete (')', At Ending); Delete (',', At Ending); Delete ('.', At Ending)
-260$g | 260$g            | S; Delete ('(', At Beginning); Delete (')', At Ending); Delete ('.', At Ending)
+// #if (Not (Exists (@245(1)$n) Or Exists (@245(1)$p)))
+// 264I1 | 260I1            | ' '
+// 264I2 | 260I2            | ' '
+// 264$a | 260$a            | S; Delete (':', At Ending); Delete (',', At Ending); Delete ('.', At Ending); Delete (';', At Ending)
+// 264$b | 260$b            | S; Delete (',', At Ending); Delete (':', At Ending); Delete ('.', At Ending); Delete (';', At Ending)
+// 264$c | 260$c            | S; Replace ('c1' By 'cop. 1'); Replace ('c2' By 'cop. 2'); Delete ('.', At Ending); Delete (';', At Ending)
+// 264$e | 260$e            | S; Delete ('(', At Beginning); Delete (')', At Ending); Delete (':', At Ending); Delete ('.', At Ending)
+// 264$f | 260$f            | S; Delete ('(', At Beginning); Delete (')', At Ending); Delete (',', At Ending); Delete ('.', At Ending)
+// 264$g | 260$g            | S; Delete ('(', At Beginning); Delete (')', At Ending); Delete ('.', At Ending)
+// #endif
+
+#if (Exists (@245(1)$n) Or Exists (@245(1)$p)) // Moniosainen teos
+264I1 | 260(new)I1       | ' '
+264I2 | 260(newest)I2    | ' '
+264$a | 260(newest)$a    | S; Delete (':', At Ending); Delete (',', At Ending); Delete ('.', At Ending); Delete (';', At Ending)
+264$b | 260(newest)$b    | S; Delete (',', At Ending); Delete (':', At Ending); Delete ('.', At Ending); Delete (';', At Ending)
+264$c | 260(new)I1       | ' '
+264$c | 260(newest)I2    | '1'
+264$c | 260(newest)$c    | S; Replace ('c1' By 'cop. 1'); Replace ('c2' By 'cop. 2'); Delete ('.', At Ending); Delete (';', At Ending); KUSTANNUSOY
+264$e | 260(newest)$e    | S; Delete ('(', At Beginning); Delete (')', At Ending); Delete (':', At Ending); Delete ('.', At Ending)
+264$f | 260(newest)$f    | S; Delete ('(', At Beginning); Delete (')', At Ending); Delete (',', At Ending); Delete ('.', At Ending); KUSTANNUSOY
+264$g | 260(newest)$g    | S; Delete ('(', At Beginning); Delete (')', At Ending); Delete ('.', At Ending)
 #endif
 
-#if (Exists (@245(1)$n) Or Exists (@245(1)$p))
-260I1 | 260(new)I1       | ' '
-260I2 | 260(newest)I2    | ' '
-260$a | 260(newest)$a    | S; Delete (':', At Ending); Delete (',', At Ending); Delete ('.', At Ending); Delete (';', At Ending)
-260$b | 260(newest)$b    | S; Delete (',', At Ending); Delete (':', At Ending); Delete ('.', At Ending); Delete (';', At Ending)
-260$c | 260(new)I1       | ' '
-260$c | 260(newest)I2    | '1'
-260$c | 260(newest)$c    | S; Replace ('c1' By 'cop. 1'); Replace ('c2' By 'cop. 2'); Delete ('.', At Ending); Delete (';', At Ending)
-260$e | 260(newest)$e    | S; Delete ('(', At Beginning); Delete (')', At Ending); Delete (':', At Ending); Delete ('.', At Ending)
-260$f | 260(newest)$f    | S; Delete ('(', At Beginning); Delete (')', At Ending); Delete (',', At Ending); Delete ('.', At Ending)
-260$g | 260(newest)$g    | S; Delete ('(', At Beginning); Delete (')', At Ending); Delete ('.', At Ending)
-#endif
-
-// Kenttää voidaan toistaa, 2. indikaattorin arvo ratkaisee tuleeko esim. vuosiluku kenttään
-
-#if Not (@264(n)I2 = '3')
+#if (Not @264(n)I2 = '3')
 264I1 | 260I1    | ' '
 264I2 | 260I2    | ' '
 264$a | 260$a    | S; Delete (':', At Ending); Delete (',', At Ending); Delete ('.', At Ending); Delete (';', At Ending)
 264$b | 260$b    | S; Delete (',', At Ending); Delete (':', At Ending); Delete ('.', At Ending); Delete (';', At Ending)
 #endif
 
+// VUOSILUVUN VALINTA:
+// 
+//   -jos 264  1 $c:ssä on vuosiluku ilman hakasia otetaan se -> 260 $c
+//   - samoin jos on vain pelkkä 264 1 $c eikä muita 264 $c osakenttiä
+//   -jos 264 1 $c:ssä on vuosiluku hakasissa ja 264 3 $c:ssä vuosi ilman hakasia, 264 3 $c vuosi -> 260 $c
+//   -jos 264 1 $c:ssä on vuosiluku hakasissa, eikä ole 264 3 $c, ja jos 264 4 $c:ssä oleva vuosi on sama kuin 264 1 $c:ssä, copyrightvuosi 264 4 $c:stä -> 260 $c
+
+#if (@264(n)I2 = '1')
+264(n)$c | 260(1)$c    | If ( (RegFind(S, '\\]') < 0) Or (Not Exists(@264(2)$c))) Then S; Delete ('['); Delete (']'); Delete ('.')
+#endif
+
+//#if (@264(n)I2 = '3')
+//264(n)$a | 260(no)$e    | S; Delete (':', At Ending); Delete (',', At Ending); Delete ('.', At Ending); Delete (';', At Ending)
+//264(n)$b | 260(no)$f    | S; Delete (':', At Ending); Delete (',', At Ending); Delete ('.', At Ending); Delete (';', At Ending); KUSTANNUSOY
+//264(n)$c | 260(1)$c     | If (RegFind(@264(1)$c, '\\[') >=0) And (RegFind(S, '\\[') <0) Then S; Delete ('['); Delete (']'); Delete ('.')
+//#endif
+
 #if (@264(n)I2 = '3')
-264(n)$a | 260(no)$e    | S
-264(n)$b | 260(no)$f    | S
+264I1    | 260(new)I1     | S
+264I2    | 260(newest)I2  | '1'
+264(n)$a | 260(no)$e    | S; Delete (':', At Ending); Delete (',', At Ending); Delete ('.', At Ending); Delete (';', At Ending)
+264(n)$b | 260(no)$f    | S; Delete (':', At Ending); Delete (',', At Ending); Delete ('.', At Ending); Delete (';', At Ending); KUSTANNUSOY
+264(n)$c | 260(1)$c     | If (RegFind(@264(1)$c, '\\[') >=0) And (RegFind(S, '\\[') <0) Then S; Delete ('['); Delete (']'); Delete ('.')
+#endif
+
+#if (@264I2 = '4')
+264(n)$c | 260(1)$c    | If (RegFind(@264(1)$c, '\\[') >=0) And (Not Exists(@264(2)$c)) And (RegFind(S, '\\d{4}') >= 0) Then S
 #endif
 
 // Jos 264$c-kentän toistumiin on kirjattu sama vuosi julkaisu- ja tekijänoikeusvuodeksi --> 264$c '© vuosi'
 
-#if (Exists(@264(2)$c))
-264(1)$c | <X01$c  | If (RegFind(S, '\\d+') >=0 ) Then RegMatch(0)
-X01$c    | 260$c   | If (RegFind(@264(2)$c, '\\d+') >= 0) And (RegMatch(0) = S) Then '© ' + S Else S
+#if (Exists(@263(2)$c) And (Exists (@245(1)$n) Or Exists (@245(1)$p)))
+264(1)$c | <X01$c     | If (RegFind(S, '\\d+') >=0 ) Then RegMatch(0)
+X01$c    | 260(2)$c   | If (RegFind(@264(2)$c, '\\d+') >= 0) And (RegMatch(0) = S) Then '© ' + S Else S; KUSTANNUSOY
 #endif
 
-#if (Not Exists(@264(2)$c))
-264$c | 260$c    | S
-#endif
+//#if (Not Exists(@264(2)$c) And (Not (Exists (@245(1)$n) Or Exists (@245(1)$p))))
+//264$c | 260(1)$c    | S
+//#endif
+
+264   | 260 | Sort('abcef')
 
 300I1 | <C00I1      | ' '
 300I2 | <C00I2      | SetIndFrom245np
