@@ -1,5 +1,5 @@
 ﻿MARC21 bibliographic (RDA) to Finmarc (Unicode Supported)
-RDA-versio 15.4.2016 (KK/TV)
+RDA-versio 19.4.2016 (KK/TV)
 
 #define macro SetIndFrom245np | If (Exists(@245(1)$n) Or Exists(@245(1)$p)) Then '1' Else ' '
 
@@ -23,6 +23,8 @@ RDA-versio 15.4.2016 (KK/TV)
                           Replace('kuvitettu' By 'kuv.'); \
                           Replace('sivua' By 's.'); \
                           Replace('painos' By 'p.')
+
+#define macro VALIMERKIT | Delete (':'); Delete (','); Delete ('.'); Delete (';')
           
 #define macro PartOrWhole   | If (Exists(@245(1)$n) Or Exists(@245(1)$p)) \
                                 And If ((RegFind($q, '[Kk]oko(.*)') < 0) \
@@ -689,36 +691,36 @@ C46   | 745(newest)   | S; Replace('$b' By ' : ')
 256I2 | 258I2       | SetIndFrom245np
 256$a | 258$a       | S; Delete ('.', At Ending)
 
-// #if (Not (Exists (@245(1)$n) Or Exists (@245(1)$p)))
-// 264I1 | 260I1            | ' '
-// 264I2 | 260I2            | ' '
-// 264$a | 260$a            | S; Delete (':', At Ending); Delete (',', At Ending); Delete ('.', At Ending); Delete (';', At Ending)
-// 264$b | 260$b            | S; Delete (',', At Ending); Delete (':', At Ending); Delete ('.', At Ending); Delete (';', At Ending)
-// 264$c | 260$c            | S; Replace ('c1' By 'cop. 1'); Replace ('c2' By 'cop. 2'); Delete ('.', At Ending); Delete (';', At Ending)
-// 264$e | 260$e            | S; Delete ('(', At Beginning); Delete (')', At Ending); Delete (':', At Ending); Delete ('.', At Ending)
-// 264$f | 260$f            | S; Delete ('(', At Beginning); Delete (')', At Ending); Delete (',', At Ending); Delete ('.', At Ending)
-// 264$g | 260$g            | S; Delete ('(', At Beginning); Delete (')', At Ending); Delete ('.', At Ending)
-// #endif
+// Moniosaiset teokset
 
-#if (Exists (@245(1)$n) Or Exists (@245(1)$p)) // Moniosainen teos
-264I1 | 260(new)I1       | ' '
-264I2 | 260(newest)I2    | ' '
-264$a | 260(newest)$a    | S; Delete (':', At Ending); Delete (',', At Ending); Delete ('.', At Ending); Delete (';', At Ending)
-264$b | 260(newest)$b    | S; Delete (',', At Ending); Delete (':', At Ending); Delete ('.', At Ending); Delete (';', At Ending)
-264$c | 260(new)I1       | ' '
-264$c | 260(newest)I2    | '1'
-264$c | 260(newest)$c    | S; Replace ('c1' By 'cop. 1'); Replace ('c2' By 'cop. 2'); Delete ('.', At Ending); Delete (';', At Ending); KUSTANNUSOY
-264$e | 260(newest)$e    | S; Delete ('(', At Beginning); Delete (')', At Ending); Delete (':', At Ending); Delete ('.', At Ending)
-264$f | 260(newest)$f    | S; Delete ('(', At Beginning); Delete (')', At Ending); Delete (',', At Ending); Delete ('.', At Ending); KUSTANNUSOY
-264$g | 260(newest)$g    | S; Delete ('(', At Beginning); Delete (')', At Ending); Delete ('.', At Ending)
+
+
+#if (@264(n)I2 = '1') And (Exists (@245(1)$n)) Or (Exists (@245(1)$p)) // Moniosainen teos
+264I1 | <A64I1    | ' '
+264I2 | <A64I2    | ' '
+264   | <A64      | VALIMERKIT
+264$c | <ZYU$c | S; VALIMERKIT
 #endif
 
-#if (Not @264(n)I2 = '3')
-264I1 | 260I1    | ' '
-264I2 | 260I2    | ' '
-264$a | 260$a    | S; Delete (':', At Ending); Delete (',', At Ending); Delete ('.', At Ending); Delete (';', At Ending)
-264$b | 260$b    | S; Delete (',', At Ending); Delete (':', At Ending); Delete ('.', At Ending); Delete (';', At Ending)
+#if (@264(n)I2 = '3') And (Exists (@245(1)$n)) Or (Exists (@245(1)$p)) // Moniosainen teos
+264I1 | <B64I1    | ' '
+264I2 | <B64I2    | ' '
+264   | <B64      | VALIMERKIT
 #endif
+
+A64I1 | 260I1    | S
+A64I2 | 260I2    | ' '
+A64$a   | 260$a      | S
+A64(n)$b   | 260$b      | S
+
+B64I1 | 260I1    | S
+B64I2 | 260I2    | '1'
+B64   | 260      | S
+ZYU$c | 260(newest)$c    | S
+
+B64   | 260   | Sort('cab')
+
+// Ei-moniosaiset
 
 // VUOSILUVUN VALINTA:
 // 
@@ -727,17 +729,20 @@ C46   | 745(newest)   | S; Replace('$b' By ' : ')
 //   -jos 264 1 $c:ssä on vuosiluku hakasissa ja 264 3 $c:ssä vuosi ilman hakasia, 264 3 $c vuosi -> 260 $c
 //   -jos 264 1 $c:ssä on vuosiluku hakasissa, eikä ole 264 3 $c, ja jos 264 4 $c:ssä oleva vuosi on sama kuin 264 1 $c:ssä, copyrightvuosi 264 4 $c:stä -> 260 $c
 
-#if (@264(n)I2 = '1')
-264(n)$c | 260(1)$c    | If ( (RegFind(S, '\\]') < 0) Or (Not Exists(@264(2)$c))) Then S; Delete ('['); Delete (']'); Delete ('.')
+#if (Not (Exists (@245(1)$n) Or Exists (@245(1)$p))) And (@264(n)I2 = '1')
+264(n)$c | 260(1)$c    | If ( (Not Exists (@245(1)$n) Or Exists (@245(1)$p)) \
+                         And (RegFind(S, '\\]') < 0) Or (Not Exists(@264(2)$c)) ) Then S; \ 
+                         Delete ('['); Delete (']'); Delete ('.')
 #endif
 
-//#if (@264(n)I2 = '3')
-//264(n)$a | 260(no)$e    | S; Delete (':', At Ending); Delete (',', At Ending); Delete ('.', At Ending); Delete (';', At Ending)
-//264(n)$b | 260(no)$f    | S; Delete (':', At Ending); Delete (',', At Ending); Delete ('.', At Ending); Delete (';', At Ending); KUSTANNUSOY
-//264(n)$c | 260(1)$c     | If (RegFind(@264(1)$c, '\\[') >=0) And (RegFind(S, '\\[') <0) Then S; Delete ('['); Delete (']'); Delete ('.')
-//#endif
+#if (Not (Exists (@245(1)$n) Or Exists (@245(1)$p))) And (Not @264(n)I2 = '3')
+264I1 | 260I1    | ' '
+264I2 | 260I2    | ' '
+264$a | 260$a    | S; Delete (':', At Ending); Delete (',', At Ending); Delete ('.', At Ending); Delete (';', At Ending)
+264$b | 260$b    | S; Delete (',', At Ending); Delete (':', At Ending); Delete ('.', At Ending); Delete (';', At Ending); KUSTANNUSOY
+#endif
 
-#if (@264(n)I2 = '3')
+#if (Not (Exists (@245(1)$n) Or (Exists (@245(1)$p)))) And (@264(n)I2 = '3')
 264I1    | 260(new)I1     | S
 264I2    | 260(newest)I2  | '1'
 264(n)$a | 260(no)$e    | S; Delete (':', At Ending); Delete (',', At Ending); Delete ('.', At Ending); Delete (';', At Ending)
