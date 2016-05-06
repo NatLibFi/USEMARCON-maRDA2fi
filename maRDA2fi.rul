@@ -1,5 +1,5 @@
 ﻿MARC21 bibliographic (RDA) to Finmarc (Unicode Supported)
-RDA-versio 19.4.2016 (KK/TV)
+RDA-versio 6.5.2016 (KK/TV)
 
 #define macro SetIndFrom245np | If (Exists(@245(1)$n) Or Exists(@245(1)$p)) Then '1' Else ' '
 
@@ -22,7 +22,9 @@ RDA-versio 19.4.2016 (KK/TV)
                           Replace('nuotteja' By 'nuott.'); \
                           Replace('kuvitettu' By 'kuv.'); \
                           Replace('sivua' By 's.'); \
-                          Replace('painos' By 'p.')
+                          Replace('painos' By 'p.'); \
+                          Replace('uudistettu' By 'uud.')
+                          
 
 #define macro VALIMERKIT | Delete (':'); Delete (','); Delete ('.'); Delete (';')
           
@@ -42,6 +44,7 @@ RDA-versio 19.4.2016 (KK/TV)
                               Then '1' Else S
 
 #define macro KUSTANNUSOY   | Replace('Oy' By ''); \
+                              Replace('Oü' By ''); \
                               Replace('Ab' By ''); \
                               Replace('AB' By ''); \
                               Replace('Ltd' By ''); \
@@ -693,8 +696,6 @@ C46   | 745(newest)   | S; Replace('$b' By ' : ')
 
 // Moniosaiset teokset
 
-
-
 #if (@264(n)I2 = '1') And (Exists (@245(1)$n)) Or (Exists (@245(1)$p)) // Moniosainen teos
 264I1 | <A64I1    | ' '
 264I2 | <A64I2    | ' '
@@ -710,12 +711,12 @@ C46   | 745(newest)   | S; Replace('$b' By ' : ')
 
 A64I1 | 260I1    | S
 A64I2 | 260I2    | ' '
-A64$a   | 260$a      | S
-A64(n)$b   | 260$b      | S
+A64$a   | 260$a      | KUSTANNUSOY
+A64(n)$b   | 260$b      | KUSTANNUSOY
 
 B64I1 | 260I1    | S
 B64I2 | 260I2    | '1'
-B64   | 260      | S
+B64   | 260      | KUSTANNUSOY
 ZYU$c | 260(newest)$c    | S
 
 B64   | 260   | Sort('cab')
@@ -778,7 +779,12 @@ X01$c    | 260(2)$c   | If (RegFind(@264(2)$c, '\\d+') >= 0) And (RegMatch(0) = 
                       Delete (';', At Ending);
                       Delete ('+', At Ending);
                       RegReplace('(.*)\\((.+)\\)', '\\2$z\\1');
-                      LYHENTEET
+                      LYHENTEET; \
+                      If (RegFind(S, 'numeroimatonta') >= 0) Then {
+                        Replace('numeroimatonta' By '');
+                        RegReplace('\\s+', ' ');
+                        If (RegFind(S, '\\d+') >= 0) Then RegReplace('\\d+', '[' + RegMatch(0) + ']')
+                      }
 300$b | <C00$b      | S; Replace ('ill.' By 'kuv.'); 
                       Replace ('illus.' By 'kuv.'); 
                       Replace ('kuvitettu' By 'kuv.'); 
@@ -1359,9 +1365,6 @@ H76I1 | 776(new)I1    | S
 H76I2 | 776(newest)I2 | S
 H76   | 776(newest)   | S
 #endif
-
-776$z | 530(new)$a  | If (Len('\C3\A4') = 1) Then 'My\c3\b6s' Else 'My\c8os'; \ // Unicode check hack
-                      S + ' painettuna (ISBN ' + S + ')'
 
 // 780 -> 780
 780I1 | <H80I1        | ' '
