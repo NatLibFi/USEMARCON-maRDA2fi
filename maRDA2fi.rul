@@ -1,5 +1,5 @@
 ﻿MARC21 bibliographic (RDA) to Finmarc (Unicode Supported)
-RDA-versio 6.5.2016 (KK/TV)
+RDA-versio 10.5.2016 (KK/TV)
 
 #define macro SetIndFrom245np | If (Exists(@245(1)$n) Or Exists(@245(1)$p)) Then '1' Else ' '
 
@@ -780,11 +780,12 @@ X01$c    | 260(2)$c   | If (RegFind(@264(2)$c, '\\d+') >= 0) And (RegMatch(0) = 
                       Delete ('+', At Ending);
                       RegReplace('(.*)\\((.+)\\)', '\\2$z\\1');
                       LYHENTEET; \
-                      If (RegFind(S, 'numeroimatonta') >= 0) Then {
-                        Replace('numeroimatonta' By '');
-                        RegReplace('\\s+', ' ');
-                        If (RegFind(S, '\\d+') >= 0) Then RegReplace('\\d+', '[' + RegMatch(0) + ']')
-                      }
+                      If (RegFind(S, 'numeroimatonta') >= 0) Then 
+                      {
+                          Replace('numeroimatonta' By '');
+                          RegReplace('\\s+', ' ');
+                          If (RegFind(S, '\\d+') >= 0) Then RegReplace('\\d+', '[' + RegMatch(0) + ']');
+                      } Else S
 300$b | <C00$b      | S; Replace ('ill.' By 'kuv.'); 
                       Replace ('illus.' By 'kuv.'); 
                       Replace ('kuvitettu' By 'kuv.'); 
