@@ -1,21 +1,23 @@
-﻿MARC21 bibliographic (RDA) to Finmarc (Unicode Supported)
-RDA-versio 11.5.2016 (KK/TV)
+﻿MARC21 bibliographic (RDA to Finmarc (Unicode Supported)
+RDA-versio 3.6.2016 (KK/TV)
 
-#define macro SetIndFrom245np | If (Exists(@245(1)$n) Or Exists(@245(1)$p)) Then '1' Else ' '
+#define macro SETINDFROM245NP | If (Exists(@245(1)$n) Or Exists(@245(1)$p)) Then '1' Else ' '
 
-#define macro PadZero       | RegReplace('^.*?(\\d+).*?\$', '\\1'); While (Len(S) < 4) { '0' + S; }
+#define macro PADZERO       | RegReplace('^.*?(\\d+).*?\$', '\\1'); While (Len(S) < 4) { '0' + S; }
 
-#define macro NameCheck     | If (RegFind($a, '[^,]\\s[^,]+\\, ') >= 0) \
+#define macro NAMECHECK     | If (RegFind($a, '[^,]\\s[^,]+\\, ') >= 0) \
                               Or If ((Len($a) > 10) And (RegFind($a,  '[^,]-[^,]+\\, ') >= 0)) \
                               Then '2' Else S
 
-#define macro YearOfDeath   | If (RegFind('\\d[-]\\d') >= 0) Then Val(Between(6,9)); If S < 1900 Then ($d)
+#define macro YEAROFDEATH   | If (RegFind('\\d[-]\\d') >= 0) Then Val(Between(6,9)); If S < 1900 Then ($d)
+
+#define macro MONIOSAINEN  | ((Exists (@245(1)$n)) Or (Exists (@245(1)$p)))
 
 // Whether function code is abbreviated
-#define macro FunctionCode  | If (Len(S) > 5 And (RegFind('[aeiouyäöåAEIOUYÄÖÅ]\\.\$') >= 0)) Or (Len(S) > 7) Delete ('.', At Ending)
+#define macro FUNCTIONCODE  | If (Len(S) > 5 And (RegFind('[aeiouyäöåAEIOUYÄÖÅ]\\.\$') >= 0)) Or (Len(S) > 7) Delete ('.', At Ending)
 
 // Whether field 563 is removed from the resulting records (0=no, 1=yes)
-#define macro remove_563    | 1
+#define macro REMOVE_563    | 1
 
 #define macro LYHENTEET | Replace('painos' By 'p.'); \
                           Replace('karttoja' By 'kartt.'); \
@@ -24,11 +26,12 @@ RDA-versio 11.5.2016 (KK/TV)
                           Replace('sivua' By 's.'); \
                           Replace('painos' By 'p.'); \
                           Replace('uudistettu' By 'uud.')
-                          
 
-#define macro VALIMERKIT | Delete (':'); Delete (','); Delete ('.'); Delete (';')
+#define macro VALIMERKIT | Delete (':'); Delete (','); Delete ('.'); Delete (';'); Delete('['); Delete(']')
+
+#define macro LOPPUVALIMERKIT | Delete (':', At Ending); Delete (',', At Ending); Delete ('.', At Ending); Delete (';', At Ending)
           
-#define macro PartOrWhole   | If (Exists(@245(1)$n) Or Exists(@245(1)$p)) \
+#define macro PARTORWHOLE   | If (Exists(@245(1)$n) Or Exists(@245(1)$p)) \
                                 And If ((RegFind($q, '[Kk]oko(.*)') < 0) \
                                 And (RegFind($c, '[Kk]oko(.*)') < 0)) Then '1' \
                               Else If ( (@RegFind(020$c, '[Kk]oko(.*)') >= 0) \
@@ -44,7 +47,6 @@ RDA-versio 11.5.2016 (KK/TV)
                               Then '1' Else S
 
 #define macro KUSTANNUSOY   | Replace('Oy\\b' By ''); \
-                              RegReplace(' O(.){1,2}', ''); \
                               RegReplace('\\bAb\\b', ''); \
                               Replace('\\bAB\\b' By ''); \
                               Replace('Ltd\\b' By ''); \
@@ -262,7 +264,7 @@ X07/8/     | 008(1)/32/     | S
 #endif
 
 015I1 | 015I1	      | S
-015I2 | 015I2	      | PartOrWhole
+015I2 | 015I2	      | PARTORWHOLE
 015$a | 015$a       | RegReplace('[\\(\\s]*(sid\\.|nid\\.|rengaskirja)\\)?', ''); If (S != '') Then S
 015$a | <A21$c      | If Not (Exists(@020$q)) And If (RegFind('(sid\\.|nid\\.|rengaskirja|hbk\\.|pbk\\.|[Kk]oko|[Oo]sa)') >= 0) Then RegMatch(1)
 015$q | <A21$c      | If Not (Exists(@020$q)) Then Table ('Sidosasut.tbl');
@@ -271,8 +273,9 @@ X07/8/     | 008(1)/32/     | S
                       RegReplace('\\s*\\((.*?)\\)', ', \\1');
                       Delete (':', At Ending)
 
+#if (Exists(@020))
 020I1 | <A21I1      | ' '
-020I2 | <A21I2      | PartOrWhole
+020I2 | <A21I2      | PARTORWHOLE
 020$a | <A21$a      | S; RegReplace('\\s*\\((.*?)\\)', '$c\\1'); RegReplace('\\s*\\((.*?)\\)', ', \\1'); Delete (':', At Ending)
 020$q | <A21$c      | Table ('Sidosasut.tbl'); Delete ('(', At Beginning); Delete (')', At Ending)
 020$c | <A21$d      | S; Replace (', ' By '$e')
@@ -281,6 +284,7 @@ X07/8/     | 008(1)/32/     | S
 A21I1 | 021I1       | S
 A21I2 | 021I2       | S
 A21   | 021         | S; MoveAfter('c', $a, 'c')
+#endif
 
 022I1 | 022(nto)I1  | S
 022I2 | 022(nto)I2  | ' '
@@ -290,14 +294,14 @@ A21   | 021         | S; MoveAfter('c', $a, 'c')
 
 #if (024I1 = '0')
 024I1  | 024(no)I1  | ' '
-024I2  | 024(no)I2  | SetIndFrom245np
+024I2  | 024(no)I2  | SETINDFROM245NP
 024$a  | 024(no)$a  | S
 024$z  | 024$z      | S
 #endif
 
 #if (024I1 = '2')
 024I1  | 025(no)I1  | ' '
-024I2  | 025(no)I2  | SetIndFrom245np
+024I2  | 025(no)I2  | SETINDFROM245NP
 024$a  | 025(no)$a  | S
 024$a  | 025$c      | If (BFirst('(')=0) Then S; Replace ('(' By '$c')
 024$c  | 025$d      | S
@@ -307,7 +311,7 @@ A21   | 021         | S; MoveAfter('c', $a, 'c')
 
 #if (024I1 = '5')
 024I1  | 029(no)I1  | ' '
-024I2  | 029(no)I2  | SetIndFrom245np
+024I2  | 029(no)I2  | SETINDFROM245NP
 024$a  | 029$a      | S
 #endif
 
@@ -316,7 +320,7 @@ A21   | 021         | S; MoveAfter('c', $a, 'c')
 027$a  | 027$a      | S
 
 028I1  | 028I1      | ' '
-028I2  | 028I2      | SetIndFrom245np
+028I2  | 028I2      | SETINDFROM245NP
 028$b  | 028$a      | S
 028$a  | 028$e      | If (I1='0') Then S
 028$a  | 028$b      | If (I1='1') Then S
@@ -327,7 +331,7 @@ A21   | 021         | S; MoveAfter('c', $a, 'c')
 031$t  | 528$a      | S
 
 033I1  | 033I1      | ' '
-033I2  | 033I2      | SetIndFrom245np
+033I2  | 033I2      | SETINDFROM245NP
 033$a  | 033$a      | S
 
 034I1 | 034I1       | If (I1='3') Then '2' Else S
@@ -382,7 +386,7 @@ A41   | 041(newest)   | S; ReplaceOcc('$a' By '','>1'); \
 045$c | 045$b       | S
 
 049I1  | 044I1      | ' '
-049I2  | 044I2      | SetIndFrom245np
+049I2  | 044I2      | SETINDFROM245NP
 049$a  | 044$a      | S
 049$b  | 044$b      | S
 049$c  | 044$c      | S
@@ -425,14 +429,14 @@ A80   | 080(new)    | S
 095   | 095(new)    | S
 098   | 098(new)    | S
 
-100I1 | 100I1       | NameCheck
+100I1 | 100I1       | NAMECHECK
 100I2 | 100I2       | ' '
 100$6 | 100$6       | S
 100$a | 100$a       | S; Delete (',', At Ending); If (RegFind(' [a-zA-Z]\\.\$') < 0) Delete ('.', At Ending); Replace (', ' By '$h')
 100$j | 100$f       | S; Delete (',', At Ending); Delete ('.', At Ending)
 100$c | 100$f       | S; Delete (',', At Ending); Delete ('.', At Ending)
-100$d | 100$c       | YearOfDeath; Delete (',', At Ending); Delete ('.', At Ending)
-100$e | 100$x       | S; FunctionCode
+100$d | 100$c       | YEAROFDEATH; Delete (',', At Ending); Delete ('.', At Ending)
+100$e | 100$x       | S; FUNCTIONCODE
 
 110I1 | <B10I1        | If I1='0' Then '2' Else S
 110I2 | <B10I2        | ' '
@@ -442,7 +446,7 @@ A80   | 080(new)    | S
 110$d | <B10$k        | S; Delete ('(', At Beginning); Delete (':', At Ending); Delete ('.', At Ending); Delete (')', At Ending)
 110$c | <B10$j        | S; Delete ('.', At Ending); Delete (')', At Ending)
 110$g | <B10$f        | If (D != '') Then D + ', ' + S Else S; Delete (')', At Ending); Delete (',', At Ending); Delete (':', At Ending); Delete ('.', At Ending)
-110$e | <B10$x        | S; FunctionCode
+110$e | <B10$x        | S; FUNCTIONCODE
 B10I1 | 110(new)I1    | S
 B10I2 | 110(newest)I2 | S
 B10   | 110(newest)   | S; Replace (':$j' By '$j')
@@ -481,7 +485,7 @@ B11   | 111(newest)   | S; Replace (':$j' By '$j')
 
 //130 konvertoidaan näin muissa tapauksissa kuin edellä
 #if (@000(1)/7/!='c' And @000(1)/7/!='d' And @000(1)/7/!='j' And RegFind(@130$a, '(Raamattu|Kalevala|Tuhat ja yksi y|Bible|Bibeln)') < 0)
-130I1 | 241I1       | SetIndFrom245np
+130I1 | 241I1       | SETINDFROM245NP
 130I1 | 241I2       | If (S='0') Then ' ' Else S
 130$a | 241$a       | S; Delete ('.', At Ending); Delete (',', At Ending)
 #endif
@@ -547,9 +551,9 @@ B11   | 111(newest)   | S; Replace (':$j' By '$j')
 245I2 | <B48I2      | If ((Exists ($n) Or Exists ($p)) And (@000/8/!='s')) Then ' '
 245$n | <B48$g      | If (ns=1 And @000/8/!='s') Then S; Delete ('.', At Ending); Delete (',', At Ending); Delete ('/', At Ending); Delete (' =', At Ending)
 245$p | <B48$h      | If (ns=1 And @000/8/!='s') Then S; Delete (',', At Ending); Delete ('.', At Ending); Delete ('/', At Ending); Delete (' =', At Ending)
-245$n | <B48$y      | If (ns=1 And @000/8/!='s' And RegFind('\\d') >= 0 And RegFind('.+/\\d+') < 0) Then S; Delete ('.', At Ending); Delete (',', At Ending); Delete ('/', At Ending); Delete (' =', At Ending); PadZero
-245$n | <B48$x      | If (ns=1 And @000/8/!='s' And RegFind('\\d') >= 0 And RegFind('(.+)/(\\d+)') >= 0) Then RegMatch(2); PadZero
-245$n | <B48$y      | If (ns=1 And @000/8/!='s' And RegFind('\\d') >= 0 And RegFind('(.+)/(\\d+)') >= 0) Then RegMatch(1); Delete ('.', At Ending); Delete (',', At Ending); Delete ('/', At Ending); Delete (' =', At Ending); PadZero
+245$n | <B48$y      | If (ns=1 And @000/8/!='s' And RegFind('\\d') >= 0 And RegFind('.+/\\d+') < 0) Then S; Delete ('.', At Ending); Delete (',', At Ending); Delete ('/', At Ending); Delete (' =', At Ending); PADZERO
+245$n | <B48$x      | If (ns=1 And @000/8/!='s' And RegFind('\\d') >= 0 And RegFind('(.+)/(\\d+)') >= 0) Then RegMatch(2); PADZERO
+245$n | <B48$y      | If (ns=1 And @000/8/!='s' And RegFind('\\d') >= 0 And RegFind('(.+)/(\\d+)') >= 0) Then RegMatch(1); Delete ('.', At Ending); Delete (',', At Ending); Delete ('/', At Ending); Delete (' =', At Ending); PADZERO
 245$p | <B48$r      | If (ns>1 And @000/8/!='s') Then S; Delete (',', At Ending); Delete ('.', At Ending); Delete ('/', At Ending); Delete (' =', At Ending)
 
 // Aineiston yleismääreen asettaminen
@@ -675,35 +679,35 @@ C46   | 745(newest)   | S; Replace('$b' By ' : ')
 247$b | 500(1)$a    | + ' ' + S
 
 250I1 | 250I1       | ' '
-250I2 | 250I2       | SetIndFrom245np
+250I2 | 250I2       | SETINDFROM245NP
 250$a | 250$a       | S; Delete ('/', At Ending); If (RegFind('[ed|uppl]\\.\$') < 0 And RegFind('\\s.\\.\$') < 0) Delete ('.', At Ending); LYHENTEET
 250$b | 250$c       | S; Delete ('.', At Ending)
 
 254I1 | 254I1       | ' '
-254I2 | 254I2       | SetIndFrom245np
+254I2 | 254I2       | SETINDFROM245NP
 254$a | 254$a       | S
 
 255I1 | 256I1       | ' '
-255I2 | 256I2       | SetIndFrom245np
+255I2 | 256I2       | SETINDFROM245NP
 255$a | 256$a       | S; Delete (';', At Ending)
 255$b | 256$b       | S
 255$c | 256$c       | S
 255$e | 256$d       | S
 
 256I1 | 258I1       | ' '
-256I2 | 258I2       | SetIndFrom245np
+256I2 | 258I2       | SETINDFROM245NP
 256$a | 258$a       | S; Delete ('.', At Ending)
 
 // Moniosaiset teokset
 
-#if (@264(n)I2 = '1') And (Exists (@245(1)$n)) Or (Exists (@245(1)$p)) // Moniosainen teos
+#if (@264(n)I2 = '1') And MONIOSAINEN
 264I1 | <A64I1    | ' '
 264I2 | <A64I2    | ' '
 264   | <A64      | VALIMERKIT; KUSTANNUSOY
 264$c | <ZYU$c | S; VALIMERKIT
 #endif
 
-#if (@264(n)I2 = '3') And (Exists (@245(1)$n)) Or (Exists (@245(1)$p)) // Moniosainen teos
+#if (@264(n)I2 = '3') And MONIOSAINEN
 264I1 | <B64I1    | ' '
 264I2 | <B64I2    | ' '
 264   | <B64      | VALIMERKIT; KUSTANNUSOY
@@ -711,8 +715,8 @@ C46   | 745(newest)   | S; Replace('$b' By ' : ')
 
 A64I1 | 260I1    | S
 A64I2 | 260I2    | ' '
-A64$a   | 260$a      | KUSTANNUSOY
-A64(n)$b   | 260$b      | KUSTANNUSOY
+A64$a   | 260$a  | KUSTANNUSOY
+A64(n)$b | 260$b | KUSTANNUSOY
 
 B64I1 | 260I1    | S
 B64I2 | 260I2    | '1'
@@ -725,51 +729,20 @@ B64   | 260   | Sort('cab')
 
 // VUOSILUVUN VALINTA:
 // 
-//   -jos 264  1 $c:ssä on vuosiluku ilman hakasia otetaan se -> 260 $c
-//   - samoin jos on vain pelkkä 264 1 $c eikä muita 264 $c osakenttiä
-//   -jos 264 1 $c:ssä on vuosiluku hakasissa ja 264 3 $c:ssä vuosi ilman hakasia, 264 3 $c vuosi -> 260 $c
-//   -jos 264 1 $c:ssä on vuosiluku hakasissa, eikä ole 264 3 $c, ja jos 264 4 $c:ssä oleva vuosi on sama kuin 264 1 $c:ssä, copyrightvuosi 264 4 $c:stä -> 260 $c
 //   EDIT: määritystä muutettu: nyt vuosiluku tulee aina 264._1 $c -> 260 $c 
 
-#if (Not (Exists (@245(1)$n) Or Exists (@245(1)$p))) And (@264(n)I2 = '1')
-264(n)$c | 260(1)$c    | If ( (Not Exists (@245(1)$n) Or Exists (@245(1)$p)) ) Then S; \
-                         Delete ('['); Delete (']'); Delete ('.')
+#if (Not MONIOSAINEN) And (@264(n)I2 = '1')
+264I1 | 260I1 | ' '
+264I2 | 260I2 | ' '
+264   | 260   | S; VALIMERKIT; KUSTANNUSOY
 #endif
 
-#if (Not (Exists (@245(1)$n) Or Exists (@245(1)$p))) And (Not @264(n)I2 = '3')
-264I1 | 260I1    | ' '
-264I2 | 260I2    | ' '
-264$a | 260$a    | If (RegFind(S, '\\d+') <0) Then S; Delete (':', At Ending); Delete (',', At Ending); Delete ('.', At Ending); Delete (';', At Ending)
-264$b | 260$b    | S; Delete (',', At Ending); Delete (':', At Ending); Delete ('.', At Ending); Delete (';', At Ending); KUSTANNUSOY
+#if (Not MONIOSAINEN) And (@264(n)I2 != '1')
+264(n)$a   | 260(1)$e | S; LOPPUVALIMERKIT
 #endif
-
-#if (Not (Exists (@245(1)$n) Or (Exists (@245(1)$p)))) And (@264(n)I2 = '3')
-264I1    | 260(new)I1     | S
-264I2    | 260(newest)I2  | '1'
-264(n)$a | 260(no)$e    | S; Delete (':', At Ending); Delete (',', At Ending); Delete ('.', At Ending); Delete (';', At Ending)
-264(n)$b | 260(no)$f    | S; Delete (':', At Ending); Delete (',', At Ending); Delete ('.', At Ending); Delete (';', At Ending); KUSTANNUSOY
-//264(n)$c | 260(1)$c     | If (RegFind(@264(1)$c, '\\[') >=0) And (RegFind(S, '\\[') <0) Then S; Delete ('['); Delete (']'); Delete ('.')
-#endif
-
-#if (@264I2 = '4')
-//264(n)$c | 260(1)$c    | If (RegFind(@264(1)$c, '\\[') >=0) And (Not Exists(@264(2)$c)) And (RegFind(S, '\\d{4}') >= 0) Then S
-#endif
-
-// Jos 264$c-kentän toistumiin on kirjattu sama vuosi julkaisu- ja tekijänoikeusvuodeksi --> 264$c '© vuosi'
-
-//#if (Exists(@263(2)$c) And (Exists (@245(1)$n) Or Exists (@245(1)$p)))
-//264(1)$c | <X01$c     | If (RegFind(S, '\\d+') >=0 ) Then RegMatch(0)
-//X01$c    | 260(2)$c   | If (RegFind(@264(2)$c, '\\d+') >= 0) And (RegMatch(0) = S) Then '© ' + S Else S; KUSTANNUSOY
-//#endif
-
-//#if (Not Exists(@264(2)$c) And (Not (Exists (@245(1)$n) Or Exists (@245(1)$p))))
-//264$c | 260(1)$c    | S
-//#endif
-
-264   | 260 | Sort('abcef')
 
 300I1 | <C00I1      | ' '
-300I2 | <C00I2      | SetIndFrom245np
+300I2 | <C00I2      | SETINDFROM245NP
 300$z | <C00$z      | S
 300$a | <C00$a      | S; Replace ('p.' By 's.');
                       Replace ('S ' By 's. ');
@@ -782,9 +755,8 @@ B64   | 260   | Sort('cab')
                       LYHENTEET; \
                       If (RegFind(S, 'numeroimatonta') >= 0) Then 
                       {
-                          Replace('numeroimatonta' By '');
                           RegReplace('\\s+', ' ');
-                          If (RegFind(S, '\\d+') >= 0) Then RegReplace('\\d+', '[' + RegMatch(0) + ']');
+                          If (RegFind(S, '(\\d+)\\s*numeroimatonta') >= 0) Then RegReplace('\\d+\\s*numeroimatonta', '[' + RegMatch(1) + ']');
                       }
                       Else S
 300$b | <C00$b      | S; Replace ('ill.' By 'kuv.'); 
@@ -806,15 +778,15 @@ C00I2 | 300I2       | S
 C00   | 300         | S; MoveFirst('z')
 
 306I1 | 306I1       | ' '
-306I2 | 306I2       | SetIndFrom245np
+306I2 | 306I2       | SETINDFROM245NP
 306$a | 306$a       | S
 
 310I1 | 520I1       | ' '
-310I2 | 520I2       | SetIndFrom245np
+310I2 | 520I2       | SETINDFROM245NP
 310$a | 520$a       | S
 
 351I1 | 351I1       | ' '
-351I2 | 351I2       | SetIndFrom245np
+351I2 | 351I2       | SETINDFROM245NP
 351$a | 351$a       | S
 351$b | 351$a       | + S
 351$c | 351$a       | + S
@@ -832,7 +804,7 @@ C00   | 300         | S; MoveFirst('z')
 440$v | 440$v       | S
 
 #if (Not Exists(@810))
-490I1 | 440(new)I1     | SetIndFrom245np
+490I1 | 440(new)I1     | SETINDFROM245NP
 490I2 | 440(newest)I2  | ' '
 490$a | 440(newest)$a  | S; Delete (';', At Ending);
                             Delete (',', At Ending);
@@ -846,43 +818,43 @@ C00   | 300         | S; MoveFirst('z')
                             Replace ('=' By '$r')
 490$x | 440(newest)$w  | S; Delete (';', At Ending); Delete (',', At Ending); Delete ('.', At Ending)
 490$v | 440(newest)$v  | S
-490$v | 440(newest)$y  | If (RegFind('\\d') >= 0 And RegFind('.+/\\d+') < 0) Then S; PadZero
-490$v | 440(newest)$x  | If (RegFind('\\d') >= 0 And RegFind('(.+)/(\\d+)') >= 0) Then RegMatch(2); PadZero
-490$v | 440(newest)$y  | If (RegFind('\\d') >= 0 And RegFind('(.+)/(\\d+)') >= 0) Then RegMatch(1); PadZero
+490$v | 440(newest)$y  | If (RegFind('\\d') >= 0 And RegFind('.+/\\d+') < 0) Then S; PADZERO
+490$v | 440(newest)$x  | If (RegFind('\\d') >= 0 And RegFind('(.+)/(\\d+)') >= 0) Then RegMatch(2); PADZERO
+490$v | 440(newest)$y  | If (RegFind('\\d') >= 0 And RegFind('(.+)/(\\d+)') >= 0) Then RegMatch(1); PADZERO
 #endif
 
 #if (Exists(@810))
-490(1)I1 | 410(new)I2     | SetIndFrom245np
+490(1)I1 | 410(new)I2     | SETINDFROM245NP
 490(1)I2 | 410(newest)I1  | If (@810I1 = '1') Then '1' Else '2'
 490(1)$a | 410(newest)$a  | S; Delete (';', At Ending); Delete (',', At Ending); Delete ('.', At Ending); Delete ('=', At Ending); Replace ('.' By '$g'); Replace (',' By '$h')
 490(1)$x | 410(newest)$w  | S; Delete (';', At Ending); Delete (',', At Ending); Delete ('.', At Ending)
 490(1)$v | 410(newest)$v  | S
-490(1)$v | 410(newest)$y  | If (RegFind('\\d') >= 0 And RegFind('.+/\\d+') < 0) Then S; PadZero
-490(1)$v | 410(newest)$x  | If (RegFind('\\d') >= 0 And RegFind('(.+)/(\\d+)') >= 0) Then RegMatch(2); PadZero
-490(1)$v | 410(newest)$y  | If (RegFind('\\d') >= 0 And RegFind('(.+)/(\\d+)') >= 0) Then RegMatch(1); PadZero
+490(1)$v | 410(newest)$y  | If (RegFind('\\d') >= 0 And RegFind('.+/\\d+') < 0) Then S; PADZERO
+490(1)$v | 410(newest)$x  | If (RegFind('\\d') >= 0 And RegFind('(.+)/(\\d+)') >= 0) Then RegMatch(2); PADZERO
+490(1)$v | 410(newest)$y  | If (RegFind('\\d') >= 0 And RegFind('(.+)/(\\d+)') >= 0) Then RegMatch(1); PADZERO
 #endif
 
 500(1)I1 | 500(1)I1       | ' '
-500(1)I2 | 500(1)I2       | If (Not Exists(%500)) Then SetIndFrom245np
+500(1)I2 | 500(1)I2       | If (Not Exists(%500)) Then SETINDFROM245NP
 500$a    | 500(1)$a       | + If (D != '') Then '. - ' + S Else S; Delete ('.', At Ending)
 
 501I1 | <C05(new)I1     | ' '
-501I2 | <C05(newest)I2  | SetIndFrom245np
+501I2 | <C05(newest)I2  | SETINDFROM245NP
 501$a | <C05(newest)$a  | S; Delete ('.', At Ending)
 
 502I1 | 502I1       | ' '
-502I2 | 502I2       | SetIndFrom245np
+502I2 | 502I2       | SETINDFROM245NP
 502$a | 502$a       | S; Replace ('Thesis' By 'Diss.'); Replace ('--' By '$b'); Replace (', ' By '$d'); Delete (' :', At Ending)
 502$c | 502$b       | If (RegFind('(.*):') >= 0) Then RegMatch(1)
 502$c | 502$c       | If (RegFind(':(.*)') >= 0) Then RegMatch(1) Else S; Delete ('.', At Ending); Delete (',', At Ending)
 502$d | 502$d       | S; Delete ('.', At Ending)
 
 504I1 | 504I1       | ' '
-504I2 | 504I2       | SetIndFrom245np
+504I2 | 504I2       | SETINDFROM245NP
 504$a | 504$a       | S; Delete ('.', At Ending)
 
 505I1 | <C05(new)I1     | ' '
-505I2 | <C05(newest)I2  | SetIndFrom245np
+505I2 | <C05(newest)I2  | SETINDFROM245NP
 505   | <C05(newest)    | S; Delete ('.', At Ending);
                              MoveFirst('g'); RegReplace('$gs\\.\\s?([^$]*)', '$gS. \\1:');
                              Replace ('$g' By '$a', At Beginning); Replace ('$t' By '$a', At Beginning);
@@ -900,50 +872,50 @@ C05   | 505(1)      | If (D != '') Then D + S Else S; ReplaceOcc('$a' By ' ; ', 
 #endif
 
 506I1 | 507I1       | ' '
-506I2 | 507I2       | SetIndFrom245np
+506I2 | 507I2       | SETINDFROM245NP
 506$a | 507$a       | S
 506$e | 507$b       | S
 506$b | 507$c       | S
 
 507I1 | 501(new)I1     | ' '
-507I2 | 501(newest)I2  | SetIndFrom245np
+507I2 | 501(newest)I2  | SETINDFROM245NP
 507$a | 501(newest)$a  | S; Delete ('.', At Ending)
 507$b | 501(newest)$a  | + S; Delete ('.', At Ending)
 
 508I1 | 511I1       | ' '
-508I2 | 511I2       | SetIndFrom245np
+508I2 | 511I2       | SETINDFROM245NP
 508$a | 511$a       | S; Delete ('.', At Ending)
 
 509I1 | 509I1       | ' '
-509I2 | 509I2       | SetIndFrom245np
+509I2 | 509I2       | SETINDFROM245NP
 509$a | 509$a       | S; Delete (':', At Ending); Delete ('.', At Ending)
 509$c | 509$b       | S; Delete (',', At Ending); Delete ('.', At Ending)
 509$d | 509$d       | S; Delete ('.', At Ending)
 
 510I1 | 510I1       | ' '
-510I2 | 510I2       | SetIndFrom245np
+510I2 | 510I2       | SETINDFROM245NP
 510$a | 510$a       | S; Delete (',', At Ending)
 510$c | 510$c       | S
 
 511I1 | 511(nto)I1  | ' '
-511I2 | 511(nto)I2  | SetIndFrom245np
+511I2 | 511(nto)I2  | SETINDFROM245NP
 511$a | 511(nto)$a  | S; Delete ('.', At Ending)
 
 513I1 | 501(new)I1     | ' '
-513I2 | 501(newest)I2  | SetIndFrom245np
+513I2 | 501(newest)I2  | SETINDFROM245NP
 513$a | 501(newest)$a  | S; Delete ('.', At Ending)
 513$b | 501(newest)$a  | + S; Delete ('.', At Ending)
 
 515I1 | 538I1       | ' '
-515I2 | 538I2       | SetIndFrom245np
+515I2 | 538I2       | SETINDFROM245NP
 515$a | 538$a       | S; Delete ('.', At Ending)
 
 518I1 | 501(new)I1     | ' '
-518I2 | 501(newest)I2  | SetIndFrom245np
+518I2 | 501(newest)I2  | SETINDFROM245NP
 518$a | 501(newest)$a  | S; Delete ('.', At Ending)
 
 520I1 | 506I1       | ' '
-520I2 | 506I2       | SetIndFrom245np
+520I2 | 506I2       | SETINDFROM245NP
 520$a | 506$a       | If (RegFind('(Tiivistelm|Yhteenveto|Sammandrag|Sammanfattning|Abstract|Summary|Referat|Zusammenfassung)') >= 0) Then S Else { If (Len('\C3\A4') = 1) Then '[Tiivistelm\c3\a4]' + S Else '[Tiivistelm\c8a]'; };
                       ReplaceOcc(': ' By '$b', '=1');
                       Delete ('.', At Ending)
@@ -951,35 +923,35 @@ C05   | 505(1)      | If (D != '') Then D + S Else S; ReplaceOcc('$a' By ' ; ', 
 
 #if (Exists (@520$b))
 520I1 | 519I1       | ' '
-520I2 | 519I2       | SetIndFrom245np
+520I2 | 519I2       | SETINDFROM245NP
 520$b | 519$a       | S; Delete ('.', At Ending)
 #endif
 
 521I1 | 501(new)I1     | ' '
-521I2 | 501(newest)I2  | SetIndFrom245np
+521I2 | 501(newest)I2  | SETINDFROM245NP
 521$a | 501(newest)$a  | S; Delete ('.', At Ending)
 521$b | 501(newest)$a  | + ',' + S; Delete ('.', At Ending)
 
 522I1 | 501(new)I1     | ' '
-522I2 | 501(newest)I2  | If (nt > 1) Then ' ' Else SetIndFrom245np
+522I2 | 501(newest)I2  | If (nt > 1) Then ' ' Else SETINDFROM245NP
 522$a | 501(newest)$a  | S; Delete ('.', At Ending)
 
 524I1 | 501(new)I1     | ' '
-524I2 | 501(newest)I2  | If (nt > 1) Then ' ' Else SetIndFrom245np
+524I2 | 501(newest)I2  | If (nt > 1) Then ' ' Else SETINDFROM245NP
 524$a | 501(newest)$a  | S; Delete ('.', At Ending)
 
 525I1 | 501(new)I1     | ' '
-525I2 | 501(newest)I2  | If (nt > 1) Then ' ' Else SetIndFrom245np
+525I2 | 501(newest)I2  | If (nt > 1) Then ' ' Else SETINDFROM245NP
 525$a | 501(newest)$a  | S; Delete ('.', At Ending)
 
 530I1 | 529I1       | ' '
-530I2 | 529I2       | SetIndFrom245np
+530I2 | 529I2       | SETINDFROM245NP
 530$a | 529$a       | S; Delete ('.', At Ending)
 530$b | 529$a       | + S; Delete ('.', At Ending)
 530$c | 529$a       | + S; Delete ('.', At Ending)
 
 533I1 | 501(new)I1     | ' '
-533I2 | 501(newest)I2  | SetIndFrom245np
+533I2 | 501(newest)I2  | SETINDFROM245NP
 533$a | 501(newest)$a  | S
 533$b | 501(newest)$a  | + S
 533$c | 501(newest)$a  | + S
@@ -990,7 +962,7 @@ C05   | 505(1)      | If (D != '') Then D + S Else S; ReplaceOcc('$a' By ' ; ', 
 533$n | 501(newest)$a  | + S
 
 534I1 | 534I1       | ' '
-534I2 | 534I2       | SetIndFrom245np
+534I2 | 534I2       | SETINDFROM245NP
 534$a | 534$a       | S; Delete ('.', At Ending)
 534$t | 534$t       | S; Delete ('.', At Ending)
 534$b | 534$b       | S; Delete ('.', At Ending)
@@ -1004,70 +976,70 @@ C05   | 505(1)      | If (D != '') Then D + S Else S; ReplaceOcc('$a' By ' ; ', 
 534$z | 534$x       | S; Delete ('.', At Ending)
 
 538I1 | 548(new)I1     | ' '
-538I2 | 548(newest)I2  | SetIndFrom245np
+538I2 | 548(newest)I2  | SETINDFROM245NP
 538$a | 548(newest)$a  | S; Delete ('.', At Ending)
 
 540I1 | 501(new)I1     | ' '
-540I2 | 501(newest)I2  | SetIndFrom245np
+540I2 | 501(newest)I2  | SETINDFROM245NP
 540$a | 501(newest)$a  | S; Delete ('.', At Ending)
 540$b | 501(newest)$a  | S; Delete ('.', At Ending)
 540$c | 501(newest)$a  | S; Delete ('.', At Ending)
 540$d | 501(newest)$a  | S; Delete ('.', At Ending)
 
 541I1 | 541I1       | ' '
-541I2 | 541I2       | SetIndFrom245np
+541I2 | 541I2       | SETINDFROM245NP
 541$a | 541$a       | S; Delete (';', At Ending)
 541$b | 541$b       | S; Delete (';', At Ending)
 541$c | 541$c       | S; Delete (';', At Ending)
 541$d | 541$d       | S; Delete (';', At Ending)
 
 545I1 | 545I1       | ' '
-545I2 | 545I2       | SetIndFrom245np
+545I2 | 545I2       | SETINDFROM245NP
 545$a | 545$a       | S; Delete ('.', At Ending)
 545$b | 545$a       | + S; Delete ('.', At Ending)
 
 546I1 | 501(new)I1     | ' '
-546I2 | 501(newest)I2  | SetIndFrom245np
+546I2 | 501(newest)I2  | SETINDFROM245NP
 546$a | 501(newest)$a  | S; Delete ('.', At Ending)
 
 547I1 | 500(new)I1     | ' '
-547I2 | 500(newest)I2  | SetIndFrom245np
+547I2 | 500(newest)I2  | SETINDFROM245NP
 547$a | 500(newest)$a  | S; Delete ('.', At Ending)
 
 // fi.chk: 500 on toistettava, vaikka MARC21-Finissä 500 on ei-toistettava.
 
 550I1 | 550(nto)I1  | ' '
-550I2 | 550(nto)I2  | SetIndFrom245np
+550I2 | 550(nto)I2  | SETINDFROM245NP
 550$a | 550(nto)$a  | S; Delete ('.', At Ending)
 
 561I1 | 561(nto)I1  | ' '
-561I2 | 561(nto)I2  | SetIndFrom245np
+561I2 | 561(nto)I2  | SETINDFROM245NP
 561$a | 561(nto)$a  | S; Delete ('.', At Ending)
 
 567I1 | 500I1  | ' '
 567I2 | 500I2  | ' '
 567$a | 500$a  | If (Exists(%500$a)) Then + '. - ' + S Else + S; Delete ('.', At Ending)
 
-#if (remove_563 = '0')
+#if (REMOVE_563 = '0')
 583I1 | 563(new)I1     | ' '
-583I2 | 563(newest)I2  | SetIndFrom245np
+583I2 | 563(newest)I2  | SETINDFROM245NP
 583$a | 563(newest)$a  | S
 583$c | 563(newest)$a  | + ' ' + S
 #endif
 
 586I1 | 501(new)I1     | ' '
-586I2 | 501(newest)I2  | SetIndFrom245np
+586I2 | 501(newest)I2  | SETINDFROM245NP
 586$a | 501(newest)$a  | S
 
 588I1 | 530I1       | ' '
 588I2 | 530I2 	    | ' '
 588$a | 530$a	      | S; Delete ('.', At Ending)
 
-600I1 | 600I1       | NameCheck
+600I1 | 600I1       | NAMECHECK
 600I2 | 600I2       | ' '
 600$a | 600$a       | S; Delete (',', At Ending); If (RegFind(' [a-zA-Z]\\.\$') < 0) Delete ('.', At Ending); Replace (', ' By '$h')
 600$c | 600$f       | S; Delete ('.', At Ending); Delete (',', At Ending)
-600$d | 600$c       | YearOfDeath; Delete (',', At Ending); Delete ('.', At Ending)
+600$d | 600$c       | YEAROFDEATH; Delete (',', At Ending); Delete ('.', At Ending)
 600$j | 600$f       | S; Delete (',', At Ending); Delete ('.', At Ending)
 600$t | 600$t       | S; Delete ('.', At Ending); Delete (',', At Ending)
 600$l | 600$t       | + ', ' + S; Delete (',', At Ending); Delete (';', At Ending); Delete ('.', At Ending)
@@ -1180,12 +1152,12 @@ G50 | 695(new)      | If (I2='4') Then S; Replace ('$y' By '$A'); Replace('$z' B
 655   | 652(newest)    | S; Replace('$v' By '$x'); Delete ('.', At Ending); Replace ('$y' By '$A'); Replace('$z' By '$y'); Replace('$A' By '$z'); Delete ('$2ysa')
 #endif
 
-700I1 | 700I1       | NameCheck
+700I1 | 700I1       | NAMECHECK
 700I2 | 700I2       | '1'
 700$a | 700$a       | S; Delete (',', At Ending); If (RegFind('\\s.\\.\$') < 0) Delete ('.', At Ending); Replace (', ' By '$h')
 700$j | 700$f       | S; Delete (',', At Ending); If (RegFind('\\s.\\.\$') < 0) Delete ('.', At Ending)
 700$c | 700$f       | S; Delete (',', At Ending); Delete ('.', At Ending)
-700$d | 700$c       | YearOfDeath; Delete (',', At Ending); Delete ('.', At Ending)
+700$d | 700$c       | YEAROFDEATH; Delete (',', At Ending); Delete ('.', At Ending)
 700$t | 700$t       | S; Delete (',', At Ending); Delete ('.', At Ending)
 700$l | 700$t       | + ', ' + S; Delete (',', At Ending); Delete (';', At Ending); Delete ('.', At Ending)
 700$m | 700$t       | + ', ' + S; Delete (',', At Ending); Delete (';', At Ending); Delete ('.', At Ending)
@@ -1194,7 +1166,7 @@ G50 | 695(new)      | If (I2='4') Then S; Replace ('$y' By '$A'); Replace('$z' B
 700$p | 700$t       | + ', ' + S; Delete (',', At Ending); Delete (';', At Ending); Delete ('.', At Ending)
 700$r | 700$t       | + ', ' + S; Delete (',', At Ending); Delete (';', At Ending); Delete ('.', At Ending)
 700$s | 700$t       | + '. ' + S; Delete (',', At Ending); Delete (';', At Ending); Delete ('.', At Ending)
-700$e | 700$x       | S; FunctionCode
+700$e | 700$x       | S; FUNCTIONCODE
 
 710I1 | <H10I1        | If (I1 = '0') Then '2' Else S
 710I2 | <H10I2        | '1'
@@ -1204,7 +1176,7 @@ G50 | 695(new)      | If (I2='4') Then S; Replace ('$y' By '$A'); Replace('$z' B
 710$d | <H10$k        | S; Delete ('(', At Beginning); Delete (':', At Ending)
 710$c | <H10$j        | S; Delete ('.', At Ending); Delete (')', At Ending)
 710$g | <H10$f        | If (D != '') Then D + ', ' + S Else S; Delete (')', At Ending); Delete (',', At Ending); Delete (':', At Ending); Delete ('.', At Ending)
-710$e | <H10$x        | S; FunctionCode
+710$e | <H10$x        | S; FUNCTIONCODE
 H10I1 | 710(new)I1    | S
 H10I2 | 710(newest)I2 | S
 H10   | 710(newest)   | S; Replace (':$j' By '$j')
@@ -1217,7 +1189,7 @@ H10   | 710(newest)   | S; Replace (':$j' By '$j')
 711$d | <H11$k        | S; Delete ('(', At Beginning); Delete (':', At Ending)
 711$c | <H11$j        | S; Delete ('.', At Ending); Delete (')', At Ending)
 711$g | <H11$f        | If (D != '') Then D + ', ' + S Else S; Delete (')', At Ending); Delete (',', At Ending); Delete (':', At Ending); Delete ('.', At Ending)
-711$j | <H11$x        | S; FunctionCode
+711$j | <H11$x        | S; FUNCTIONCODE
 H11I1 | 711(new)I1    | S
 H11I2 | 711(newest)I2 | S
 H11   | 711(newest)   | S; Replace (':$j' By '$j')
@@ -1261,7 +1233,7 @@ XXX$a | 500(1)$a 	 | + ' ' + S
 #endif
 
 730I1 | 241(new)I2       | If (I1='0') Then ' ' Else S
-730I2 | 241(newest)I1    | SetIndFrom245np
+730I2 | 241(newest)I1    | SETINDFROM245NP
 730$a | 241(newest)$a    | S; Delete ('.', At Ending); Delete (',', At Ending); Delete (';', At Ending)
 
 740I1 | 745(new)I2       | If (I1='0') Then ' ' Else S
@@ -1414,28 +1386,28 @@ H87   | 787(newest)   | S
 
 #if (@810$a + @810$x != @490(1)$a + @490(1)$x And @810$a + @810$x != @490(2)$a + @490(2)$x And @810$a + @810$x != @490(3)$a + @490(3)$x)
 810I1 | 540I1       | '1'
-810I2 | 540I2       | SetIndFrom245np
+810I2 | 540I2       | SETINDFROM245NP
 810$a | 540$a       | S; Delete (';', At Ending); Delete (',', At Ending); Delete ('.', At Ending); Delete ('=', At Ending); Replace ('/' By '$n')
 810$n | 540$g       | S; Delete (';', At Ending); Delete (',', At Ending); Delete ('.', At Ending)
 810$p | 540$h       | S; Delete (';', At Ending); Delete (',', At Ending); Delete ('.', At Ending)
 810$x | 540$w       | S; Delete (';', At Ending); Delete (',', At Ending); Delete ('.', At Ending)
 810$v | 540$v       | S; Delete ('.', At Ending)
-810$v | 540$y       | If (RegFind('\\d') >= 0 And RegFind('.+/\\d+') < 0) Then S; PadZero
-810$v | 540$x       | If (RegFind('\\d') >= 0 And RegFind('(.+)/(\\d+)') >= 0) Then RegMatch(2); PadZero
-810$v | 540$y       | If (RegFind('\\d') >= 0 And RegFind('(.+)/(\\d+)') >= 0) Then RegMatch(1); PadZero
+810$v | 540$y       | If (RegFind('\\d') >= 0 And RegFind('.+/\\d+') < 0) Then S; PADZERO
+810$v | 540$x       | If (RegFind('\\d') >= 0 And RegFind('(.+)/(\\d+)') >= 0) Then RegMatch(2); PADZERO
+810$v | 540$y       | If (RegFind('\\d') >= 0 And RegFind('(.+)/(\\d+)') >= 0) Then RegMatch(1); PADZERO
 #endif
 
 #if (@830$a + @830$x != @490(1)$a + @490(1)$x And @830$a + @830$x != @490(2)$a + @490(2)$x And @830$a + @830$x != @490(3)$a + @490(3)$x)
 830I1 | 540I1       | '1'
-830I2 | 540I2       | SetIndFrom245np
+830I2 | 540I2       | SETINDFROM245NP
 830$a | 540$a       | S; Delete (';', At Ending); Delete (',', At Ending); Delete ('.', At Ending); Delete ('=', At Ending); Replace ('/' By '$n')
 830$n | 540$g       | S; Delete (';', At Ending); Delete (',', At Ending); Delete ('.', At Ending)
 830$p | 540$h       | S; Delete (';', At Ending); Delete (',', At Ending); Delete ('.', At Ending)
 830$x | 540$w       | S; Delete (';', At Ending); Delete (',', At Ending); Delete ('.', At Ending)
 830$v | 540$v       | S; Delete ('.', At Ending)
-830$v | 540$y       | If (RegFind('\\d') >= 0 And RegFind('.+/\\d+') < 0) Then S; PadZero
-830$v | 540$x       | If (RegFind('\\d') >= 0 And RegFind('(.+)/(\\d+)') >= 0) Then RegMatch(2); PadZero
-830$v | 540$y       | If (RegFind('\\d') >= 0 And RegFind('(.+)/(\\d+)') >= 0) Then RegMatch(1); PadZero
+830$v | 540$y       | If (RegFind('\\d') >= 0 And RegFind('.+/\\d+') < 0) Then S; PADZERO
+830$v | 540$x       | If (RegFind('\\d') >= 0 And RegFind('(.+)/(\\d+)') >= 0) Then RegMatch(2); PADZERO
+830$v | 540$y       | If (RegFind('\\d') >= 0 And RegFind('(.+)/(\\d+)') >= 0) Then RegMatch(1); PADZERO
 #endif
 
 #if (RegFind(@856$i, 'input this URL in a browser') < 0)
@@ -1470,7 +1442,7 @@ H87   | 787(newest)   | S
 900I1  | 900I1      | S
 900I2  | 900I2      | S
 900$a  | 900$a      | S; Replace (', ' By '$h'); Delete (',', At Ending)
-900$d  | 900$c      | YearOfDeath; Delete (',', At Ending)
+900$d  | 900$c      | YEAROFDEATH; Delete (',', At Ending)
 900$c  | 900$f      | S; Delete (',', At Ending)
 900$t  | 900$t      | S
 900$y  | 900$y      | S
