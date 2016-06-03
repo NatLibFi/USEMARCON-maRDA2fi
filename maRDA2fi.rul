@@ -46,12 +46,15 @@ RDA-versio 3.6.2016 (KK/TV)
                               And (RegFind($c, '[Kk]oko(.*)') < 0)) \
                               Then '1' Else S
 
-#define macro KUSTANNUSOY   | Replace('Oy\\b' By ''); \
-                              RegReplace('\\bAb\\b', ''); \
-                              Replace('\\bAB\\b' By ''); \
-                              Replace('Ltd\\b' By ''); \
-                              Replace('Kustannusosakeyhtiö' By ''); \
-                              Replace('Kustannus' By '')
+#define macro KUSTANNUSOY   | Replace(' Oy' By ''); \
+                              RegReplace('\\bAb', ''); \
+                              Replace('\\bAB' By ''); \
+                              Replace('Ltd' By ''); \
+                              Replace('Kustannusosakeyhtiö ' By ''); \
+                              RegReplace('Kustannusosakeyhti(.)*\\s', ''); \
+                              Replace(' Kustannusosakeyhtiö ' By ''); \
+                              Replace('Kustannus ' By ''); \
+                              Replace(' Kustannus' By '')
 
 000/1-5/   | 000/1-5/       | S
 000/6/     | 000/6/         | 'n'
@@ -704,7 +707,7 @@ C46   | 745(newest)   | S; Replace('$b' By ' : ')
 264I1 | <A64I1    | ' '
 264I2 | <A64I2    | ' '
 264   | <A64      | VALIMERKIT; KUSTANNUSOY
-264$c | <ZYU$c | S; VALIMERKIT
+264$c | <ZYU$c    | S; VALIMERKIT
 #endif
 
 #if (@264(n)I2 = '3') And MONIOSAINEN
@@ -713,17 +716,18 @@ C46   | 745(newest)   | S; Replace('$b' By ' : ')
 264   | <B64      | VALIMERKIT; KUSTANNUSOY
 #endif
 
-A64I1 | 260I1    | S
-A64I2 | 260I2    | ' '
-A64$a   | 260$a  | KUSTANNUSOY
+A64I1    | 260I1 | S
+A64I2    | 260I2 | ' '
+A64$a    | 260$a | KUSTANNUSOY
 A64(n)$b | 260$b | KUSTANNUSOY
 
 B64I1 | 260I1    | S
 B64I2 | 260I2    | '1'
-B64   | 260      | KUSTANNUSOY
-ZYU$c | 260(newest)$c    | S 
+B64$a | 260(2)$e      | KUSTANNUSOY
+B64$b | 260(2)$f      | KUSTANNUSOY
+ZYU$c | 260(newest)$c | S 
 
-B64   | 260   | Sort('cab')
+B64   | 260   | Sort('cef')
 
 // Ei-moniosaiset
 
@@ -734,11 +738,13 @@ B64   | 260   | Sort('cab')
 #if (Not MONIOSAINEN) And (@264(n)I2 = '1')
 264I1 | 260I1 | ' '
 264I2 | 260I2 | ' '
-264   | 260   | S; VALIMERKIT; KUSTANNUSOY
+264   | 260   | S; Delete(','); Delete(' :'); Delete(' ;'); KUSTANNUSOY
+264$c | 260$c | S; VALIMERKIT
 #endif
 
 #if (Not MONIOSAINEN) And (@264(n)I2 != '1')
-264(n)$a   | 260(1)$e | S; LOPPUVALIMERKIT
+264(n)$a   | 260(1)$e | S; LOPPUVALIMERKIT; MoveBefore('f', $e)
+264(2)$b   | 260(1)$f | S; LOPPUVALIMERKIT; KUSTANNUSOY; MoveLast('f')
 #endif
 
 300I1 | <C00I1      | ' '
