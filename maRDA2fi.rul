@@ -1,5 +1,5 @@
 ﻿MARC21 bibliographic (RDA to Finmarc (Unicode Supported)
-RDA-versio 3.6.2016 (KK/TV)
+RDA-versio 3.6.2016 (KK/TV) (13.6.2016 UI)
 
 #define macro SETINDFROM245NP | If (Exists(@245(1)$n) Or Exists(@245(1)$p)) Then '1' Else ' '
 
@@ -27,7 +27,7 @@ RDA-versio 3.6.2016 (KK/TV)
                           Replace('painos' By 'p.'); \
                           Replace('uudistettu' By 'uud.')
 
-#define macro VALIMERKIT | Delete (':'); Delete (','); Delete ('.'); Delete (';'); Delete('['); Delete(']')
+#define macro VALIMERKIT | Delete (':'); Delete (','); Delete ('.'); Delete (';')
 
 #define macro LOPPUVALIMERKIT | Delete (':', At Ending); Delete (',', At Ending); Delete ('.', At Ending); Delete (';', At Ending)
           
