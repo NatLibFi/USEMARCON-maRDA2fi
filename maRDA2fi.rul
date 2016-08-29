@@ -1,5 +1,5 @@
-﻿MARC21 bibliographic (RDA to Finmarc (Unicode Supported)
-RDA-versio 3.6.2016 (KK/TV) (13.6.2016 UI)
+﻿MARC21 bibliographic RDA to FINMARC (Unicode Supported)
+RDA-versio 29.8.2016 (KK/TV)
 
 #define macro SETINDFROM245NP | If (Exists(@245(1)$n) Or Exists(@245(1)$p)) Then '1' Else ' '
 
@@ -410,9 +410,9 @@ A41   | 041(newest)   | S; ReplaceOcc('$a' By '','>1'); \
 
 080I1 | 080I1       | ' '
 080I2 | 080I2       | ' '
-080$a | 080$a       | If (Not Exists(@080(nt)$x)) Then S
-080$x | <A80(new)$a | @080(nt)$a + S
-A80   | 080(new)    | S
+080$a | <A80$a      | S
+080$x | <A80(nt)$a  | + S
+A80$a | 080$a       | S
 
 082   | 082I1       | ' '
 082   | 082I2       | ' '
